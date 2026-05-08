@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useProjectStore } from "@/store/project";
 import { isTauri, pickFolder } from "@/lib/tauri";
+import { ClaudeStatusBanner } from "@/features/claude-check/ClaudeStatusBanner";
 
 export function WelcomeRoute() {
   const { t } = useTranslation();
@@ -62,6 +63,8 @@ export function WelcomeRoute() {
           {t("welcome.title")}
         </h2>
         <p className="mt-2 text-muted-foreground">{t("welcome.subtitle")}</p>
+
+        <ClaudeStatusBanner />
 
         <Button size="lg" className="mt-6" onClick={openFolder}>
           <FolderOpen />

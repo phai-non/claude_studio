@@ -86,5 +86,15 @@
     "ok": "확인",
     "saved": "저장됨",
     "saving": "저장 중…"
+  },
+  "claudeCheck": {
+    "checking": "Claude CLI 확인 중…",
+    "installedTitle": "Claude Code {{version}}",
+    "installedSubtitle": "설치 확인됨",
+    "missingTitle": "Claude Code CLI를 찾을 수 없습니다",
+    "missingSubtitle": "이 앱은 프로젝트별 .claude 설정을 만드는 도구이며, 실제 실행은 Claude CLI가 필요합니다.",
+    "openInstallPage": "설치 페이지 열기",
+    "recheck": "다시 확인",
+    "details": "오류 상세"
   }
 }

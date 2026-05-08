@@ -1,9 +1,11 @@
+pub mod claude_check;
 pub mod fs_ops;
 pub mod marketplace;
 pub mod mcp_discover;
 pub mod pty;
 pub mod tool_hints;
 
+pub use claude_check::*;
 pub use fs_ops::*;
 pub use marketplace::*;
 pub use mcp_discover::*;

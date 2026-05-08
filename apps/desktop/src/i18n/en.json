@@ -86,5 +86,15 @@
     "ok": "OK",
     "saved": "Saved",
     "saving": "Saving…"
+  },
+  "claudeCheck": {
+    "checking": "Checking Claude CLI…",
+    "installedTitle": "Claude Code {{version}}",
+    "installedSubtitle": "Installation detected",
+    "missingTitle": "Claude Code CLI not found",
+    "missingSubtitle": "This app builds project-level .claude configurations, but the actual execution requires the Claude CLI.",
+    "openInstallPage": "Open install page",
+    "recheck": "Recheck",
+    "details": "Error details"
   }
 }

@@ -115,3 +115,16 @@ export async function discoverMcpTools(
     projectPath,
   });
 }
+
+export interface ClaudeStatus {
+  installed: boolean;
+  version?: string;
+  error?: string;
+}
+
+export async function checkClaude(): Promise<ClaudeStatus> {
+  if (!isTauri()) {
+    return { installed: false, error: "non-tauri runtime" };
+  }
+  return await invoke<ClaudeStatus>("check_claude");
+}
