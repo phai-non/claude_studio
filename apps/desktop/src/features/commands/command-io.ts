@@ -2,6 +2,7 @@ import {
   deleteFile,
   listCommands,
   readTextFile,
+  renameFile,
   writeTextFile,
 } from "@/lib/tauri";
 import { parseDoc, stringifyDoc } from "@/lib/frontmatter";
@@ -91,19 +92,12 @@ export async function saveCommand(
   const fm = CommandFrontmatterSchema.parse(doc.frontmatter);
   const newFile = cmdPath(project, doc.name);
   const serialized = stringifyDoc(fm, doc.body);
-  await writeTextFile(newFile, serialized);
 
-  // Rename: 기존 파일 경로가 새 경로와 다르면 옛 파일 삭제 (orphan 방지)
+  // Rename: 옛 경로 → 새 경로 atomic rename 후 새 내용 overwrite
   if (doc.filePath && doc.filePath !== newFile) {
-    try {
-      await deleteFile(doc.filePath);
-    } catch (e) {
-      console.warn(
-        `Renamed command saved as ${newFile}, but failed to delete old file ${doc.filePath}:`,
-        e,
-      );
-    }
+    await renameFile(doc.filePath, newFile);
   }
+  await writeTextFile(newFile, serialized);
 
   return newFile;
 }

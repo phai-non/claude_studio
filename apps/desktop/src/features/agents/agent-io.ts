@@ -2,6 +2,7 @@ import {
   deleteFile,
   listAgents,
   readTextFile,
+  renameFile,
   writeTextFile,
 } from "@/lib/tauri";
 import { parseDoc, stringifyDoc } from "@/lib/frontmatter";
@@ -100,19 +101,13 @@ export async function saveAgent(
   const fm = AgentFrontmatterSchema.parse(doc.frontmatter);
   const newFile = agentPath(project, fm.name);
   const serialized = stringifyDoc(fm, doc.body);
-  await writeTextFile(newFile, serialized);
 
-  // Rename: 기존 파일 경로가 새 경로와 다르면 옛 파일 삭제 (orphan 방지)
+  // Rename 케이스: 옛 경로 → 새 경로로 OS-level rename 후 새 내용 덮어쓰기.
+  // atomic이고 inode 보존 → 파일 watcher 입장에서도 자연스러운 modify.
   if (doc.filePath && doc.filePath !== newFile) {
-    try {
-      await deleteFile(doc.filePath);
-    } catch (e) {
-      console.warn(
-        `Renamed agent saved as ${newFile}, but failed to delete old file ${doc.filePath}:`,
-        e,
-      );
-    }
+    await renameFile(doc.filePath, newFile);
   }
+  await writeTextFile(newFile, serialized);
 
   return newFile;
 }

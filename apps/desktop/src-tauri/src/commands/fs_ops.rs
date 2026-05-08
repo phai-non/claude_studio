@@ -100,6 +100,22 @@ pub fn delete_file(path: String) -> AppResult<()> {
     Ok(())
 }
 
+/// 같은 파일시스템에서의 OS-level rename. 같은 디렉터리 내 이름 변경에 사용.
+/// `to` 의 부모 디렉터리는 미리 만들어둔다 (없으면 생성).
+#[tauri::command]
+pub fn rename_file(from: String, to: String) -> AppResult<()> {
+    let src = Path::new(&from);
+    let dst = Path::new(&to);
+    if !src.exists() {
+        return Err(AppError::Other(format!("source not found: {from}")));
+    }
+    if let Some(parent) = dst.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::rename(src, dst)?;
+    Ok(())
+}
+
 #[tauri::command]
 pub fn list_agents(project_path: String) -> AppResult<Vec<String>> {
     let project = Path::new(&project_path);

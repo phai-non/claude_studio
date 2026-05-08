@@ -52,6 +52,11 @@ export async function deleteFile(path: string): Promise<void> {
   await invoke<void>("delete_file", { path });
 }
 
+/** OS-level 파일 rename (같은 파일시스템). atomic. */
+export async function renameFile(from: string, to: string): Promise<void> {
+  await invoke<void>("rename_file", { from, to });
+}
+
 export async function fetchText(url: string): Promise<string> {
   return await invoke<string>("fetch_text", { url });
 }
