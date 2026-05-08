@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { KEBAB_RE, suggestKebabName } from "@/lib/schemas/agent";
+import { KEBAB_RE, KNOWN_MODELS, suggestKebabName } from "@/lib/schemas/agent";
 import type { CommandDoc } from "@/lib/schemas/command";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +20,9 @@ const FormSchema = z.object({
   description: z.string().min(1, "agent.validation.descriptionMin"),
   argumentHint: z.string().optional(),
   allowedToolsCsv: z.string().optional().default(""),
+  // Claude Code 슬래시 커맨드 frontmatter는 model을 임의 문자열로 받는다.
+  // 폼에선 KNOWN_MODELS 버튼 + 빈 문자열로 노출하지만 여기엔 제약을 두지 않는다.
+  model: z.string().optional(),
   body: z.string(),
 });
 type FormValues = z.input<typeof FormSchema>;
@@ -47,6 +50,7 @@ export function CommandForm({
       description: initial?.frontmatter.description ?? "",
       argumentHint: initial?.frontmatter["argument-hint"] ?? "",
       allowedToolsCsv: (initial?.frontmatter["allowed-tools"] ?? []).join(", "),
+      model: initial?.frontmatter.model ?? "",
       body: initial?.body ?? "",
     }),
     [initial],
@@ -86,11 +90,14 @@ export function CommandForm({
         description: values.description,
         "argument-hint": values.argumentHint || undefined,
         "allowed-tools": tools.length ? tools : undefined,
+        model: values.model || undefined,
       },
       body: values.body,
       filePath: initial?.filePath,
     });
   });
+
+  const modelValue = watch("model") ?? "";
 
   return (
     <form onSubmit={submit} className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -188,6 +195,46 @@ export function CommandForm({
             placeholder="Bash(git status), Read"
             {...register("allowedToolsCsv")}
           />
+        </div>
+        <div>
+          <Label>{t("agent.model")}</Label>
+          <div className="mt-1 flex flex-wrap gap-1">
+            <Button
+              type="button"
+              size="sm"
+              variant={modelValue === "" ? "default" : "outline"}
+              onClick={() =>
+                setValue("model", "", {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
+              title="기본값 사용 (frontmatter에 model 줄 없음)"
+            >
+              (기본)
+            </Button>
+            {KNOWN_MODELS.map((m) => (
+              <Button
+                key={m}
+                type="button"
+                size="sm"
+                variant={modelValue === m ? "default" : "outline"}
+                onClick={() =>
+                  setValue("model", m, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
+              >
+                {m}
+              </Button>
+            ))}
+          </div>
+          {modelValue && !KNOWN_MODELS.includes(modelValue as never) && (
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              custom: <span className="font-mono">{modelValue}</span>
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col gap-2 pt-4">

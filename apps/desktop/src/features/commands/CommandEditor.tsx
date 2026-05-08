@@ -128,7 +128,7 @@ export function CommandEditor({ projectPath, refreshSummary }: Props) {
             </li>
           )}
           {list.data?.map((c) => (
-            <li key={c.name}>
+            <li key={c.filePath ?? c.name}>
               <button
                 type="button"
                 onClick={() => {
