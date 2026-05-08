@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
@@ -8,10 +7,8 @@ import {
   ExternalLink,
   Loader2,
   Package,
-  Settings as SettingsIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useSettingsStore } from "@/store/project";
 import {
   checkAppUpdate,
   compareDottedVersion,
@@ -20,37 +17,17 @@ import {
 import pkg from "../../../package.json";
 
 const APP_VERSION: string = (pkg as { version: string }).version;
+const APP_UPDATE_REPO = "UkiDelly/claude_studio";
 
 export function AppUpdateBanner() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const repo = useSettingsStore((s) => s.appUpdateRepo);
 
   const query = useQuery<LatestReleaseInfo | null>({
-    queryKey: ["app-update", repo],
-    queryFn: () => checkAppUpdate(repo),
-    enabled: repo.length > 0,
-    staleTime: 1000 * 60 * 30, // 30분 캐시
+    queryKey: ["app-update", APP_UPDATE_REPO],
+    queryFn: () => checkAppUpdate(APP_UPDATE_REPO),
+    staleTime: 1000 * 60 * 30,
     retry: false,
   });
-
-  if (!repo) {
-    return (
-      <div className="mt-3 flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-        <Package className="size-3" />
-        <span className="flex-1">{t("appUpdate.noRepoConfigured")}</span>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-6 px-2 text-[11px]"
-          onClick={() => navigate("/settings")}
-        >
-          <SettingsIcon className="size-3" />
-          {t("appUpdate.configure")}
-        </Button>
-      </div>
-    );
-  }
 
   if (query.isPending) {
     return (

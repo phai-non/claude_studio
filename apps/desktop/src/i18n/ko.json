@@ -104,18 +104,12 @@
     "latestUnknown": "최신 버전 조회 실패"
   },
   "appUpdate": {
-    "title": "앱 업데이트",
     "current": "현재 버전 v{{version}}",
     "checking": "GitHub Releases 확인 중…",
     "upToDate": "최신 버전입니다",
     "available": "새 버전 v{{tag}} 있음",
     "openRelease": "릴리즈 페이지 열기",
-    "noRepoConfigured": "업데이트 체크가 비활성입니다. 설정에서 GitHub 저장소를 입력하세요. (예: owner/repo)",
-    "configure": "설정 열기",
     "fetchError": "업데이트 조회 실패",
-    "noReleasesYet": "이 저장소에는 아직 release가 없습니다",
-    "repoLabel": "GitHub 저장소 (owner/repo)",
-    "repoPlaceholder": "예: claude-studio/claude-studio",
-    "repoHint": "owner/repo 형식. 비워두면 업데이트 체크가 꺼집니다."
+    "noReleasesYet": "아직 release가 없습니다"
   }
 }

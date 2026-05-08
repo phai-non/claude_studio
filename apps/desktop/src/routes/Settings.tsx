@@ -8,14 +8,8 @@ import { useSettingsStore } from "@/store/project";
 
 export function SettingsRoute() {
   const { t, i18n } = useTranslation();
-  const {
-    theme,
-    setTheme,
-    marketplaceIndexUrl,
-    setMarketplaceIndexUrl,
-    appUpdateRepo,
-    setAppUpdateRepo,
-  } = useSettingsStore();
+  const { theme, setTheme, marketplaceIndexUrl, setMarketplaceIndexUrl } =
+    useSettingsStore();
 
   return (
     <div className="mx-auto w-full max-w-xl px-6 py-10">
@@ -76,28 +70,6 @@ export function SettingsRoute() {
         </CardContent>
       </Card>
 
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle className="text-sm">{t("appUpdate.title")}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <Label
-            htmlFor="app-update-repo"
-            className="text-xs text-muted-foreground"
-          >
-            {t("appUpdate.repoLabel")}
-          </Label>
-          <Input
-            id="app-update-repo"
-            placeholder={t("appUpdate.repoPlaceholder")}
-            value={appUpdateRepo}
-            onChange={(e) => setAppUpdateRepo(e.currentTarget.value)}
-          />
-          <p className="text-[11px] text-muted-foreground">
-            {t("appUpdate.repoHint")}
-          </p>
-        </CardContent>
-      </Card>
     </div>
   );
 }

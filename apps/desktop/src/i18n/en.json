@@ -104,18 +104,12 @@
     "latestUnknown": "Could not fetch latest version"
   },
   "appUpdate": {
-    "title": "App update",
     "current": "Current v{{version}}",
     "checking": "Checking GitHub Releases…",
     "upToDate": "You're on the latest version",
     "available": "v{{tag}} is available",
     "openRelease": "Open release page",
-    "noRepoConfigured": "Update check disabled. Enter a GitHub repo in Settings (e.g. owner/repo).",
-    "configure": "Open settings",
     "fetchError": "Update check failed",
-    "noReleasesYet": "No releases on this repository yet",
-    "repoLabel": "GitHub repository (owner/repo)",
-    "repoPlaceholder": "e.g. claude-studio/claude-studio",
-    "repoHint": "owner/repo form. Leave empty to disable update checks."
+    "noReleasesYet": "No releases yet"
   }
 }
