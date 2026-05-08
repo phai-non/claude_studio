@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Bot, Download, ScrollText, Store } from "lucide-react";
+import { Bot, Download, Loader2, RotateCw, ScrollText, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -73,10 +73,27 @@ export function MarketplaceGallery({ projectPath, refreshSummary }: Props) {
   return (
     <div className="flex h-full flex-col">
       <div className="border-b px-6 py-4">
-        <h2 className="flex items-center gap-2 text-lg font-semibold">
-          <Store className="size-5" />
-          {t("marketplace.title")}
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <Store className="size-5" />
+            {t("marketplace.title")}
+          </h2>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="size-8"
+            onClick={() => void list.refetch()}
+            disabled={list.isFetching}
+            title="새로고침"
+            aria-label="새로고침"
+          >
+            {list.isFetching ? (
+              <Loader2 className="size-3 animate-spin" />
+            ) : (
+              <RotateCw className="size-3" />
+            )}
+          </Button>
+        </div>
         <p className="mt-1 text-sm text-muted-foreground">
           {t("marketplace.subtitle")}
         </p>

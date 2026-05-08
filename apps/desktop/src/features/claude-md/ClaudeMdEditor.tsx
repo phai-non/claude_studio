@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Save } from "lucide-react";
+import { Loader2, RotateCw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { readTextFile, writeTextFile } from "@/lib/tauri";
@@ -66,6 +66,24 @@ export function ClaudeMdEditor({ projectPath, refreshSummary }: Props) {
               {t("common.saved")} ✓
             </span>
           )}
+          <Button
+            size="icon"
+            variant="ghost"
+            className="size-8"
+            onClick={() => {
+              void initial.refetch();
+              refreshSummary();
+            }}
+            disabled={initial.isFetching}
+            title="디스크에서 다시 로드"
+            aria-label="새로고침"
+          >
+            {initial.isFetching ? (
+              <Loader2 className="size-3 animate-spin" />
+            ) : (
+              <RotateCw className="size-3" />
+            )}
+          </Button>
           <Button onClick={save} disabled={saving || !dirty}>
             <Save className="size-4" />
             {saving ? t("common.saving") : t("agent.save")}

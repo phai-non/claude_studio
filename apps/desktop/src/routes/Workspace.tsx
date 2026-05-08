@@ -2,12 +2,12 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Link,
-  NavLink,
   Outlet,
+  useLocation,
   useNavigate,
   useParams,
 } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bot, FileText, ScrollText, Store, Terminal } from "lucide-react";
 import { useProjectStore } from "@/store/project";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,8 @@ export function WorkspaceRoute() {
   const { t } = useTranslation();
   const { path: encoded } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const qc = useQueryClient();
   const setCurrent = useProjectStore((s) => s.setCurrent);
 
   const path = encoded ? decodeURIComponent(encoded) : null;
@@ -80,28 +82,45 @@ export function WorkspaceRoute() {
           <p className="truncate text-xs text-muted-foreground">{path}</p>
         </div>
         <nav className="flex-1 space-y-1 p-2">
-          {tabs.map(({ to, icon: Icon, label, count }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
+          {tabs.map(({ to, icon: Icon, label, count }) => {
+            const isActive = location.pathname.endsWith(`/${to}`);
+            return (
+              <button
+                key={to}
+                type="button"
+                onClick={() => {
+                  if (isActive) {
+                    // 같은 탭 재클릭 → 디스크에서 다시 로드
+                    void summary.refetch();
+                    void qc.invalidateQueries({ queryKey: ["agents", path] });
+                    void qc.invalidateQueries({ queryKey: ["commands", path] });
+                    void qc.invalidateQueries({
+                      queryKey: ["claude-md", path],
+                    });
+                    void qc.invalidateQueries({ queryKey: ["marketplace"] });
+                    void qc.invalidateQueries({ queryKey: ["mcp-servers"] });
+                  } else {
+                    navigate(to);
+                  }
+                }}
+                title={isActive ? "다시 클릭해 새로고침" : label}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors",
                   isActive
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
                     : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
-                )
-              }
-            >
-              <Icon className="size-4" />
-              <span className="flex-1">{label}</span>
-              {typeof count === "number" && count > 0 && (
-                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                  {count}
-                </span>
-              )}
-            </NavLink>
-          ))}
+                )}
+              >
+                <Icon className="size-4" />
+                <span className="flex-1">{label}</span>
+                {typeof count === "number" && count > 0 && (
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </nav>
         {summary.error && (
           <div className="border-t px-4 py-3 text-xs text-destructive">

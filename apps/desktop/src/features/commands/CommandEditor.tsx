@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, Plus, ScrollText } from "lucide-react";
+import {
+  AlertTriangle,
+  Loader2,
+  Plus,
+  RotateCw,
+  ScrollText,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -76,17 +82,37 @@ export function CommandEditor({ projectPath, refreshSummary }: Props) {
             <ScrollText className="size-4" />
             {t("workspace.tabs.commands")}
           </h3>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setSelected(null);
-              setDraft(blank);
-            }}
-          >
-            <Plus className="size-3" />
-            {t("workspace.create")}
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-7"
+              onClick={() => {
+                void list.refetch();
+                refreshSummary();
+              }}
+              disabled={list.isFetching}
+              title="새로고침"
+              aria-label="새로고침"
+            >
+              {list.isFetching ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                <RotateCw className="size-3" />
+              )}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setSelected(null);
+                setDraft(blank);
+              }}
+            >
+              <Plus className="size-3" />
+              {t("workspace.create")}
+            </Button>
+          </div>
         </div>
         <ul className="flex-1 space-y-0.5 overflow-auto p-2 text-sm">
           {list.data?.length === 0 && (
