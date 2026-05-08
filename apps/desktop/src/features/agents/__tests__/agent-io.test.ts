@@ -52,4 +52,16 @@ describe("buildAgentDoc — lenient read", () => {
     const doc = buildAgentDoc("ok-name", raw, "/tmp/p/.claude/agents/ok-name.md");
     expect(doc.filePath).toBe("/tmp/p/.claude/agents/ok-name.md");
   });
+
+  it("filename overrides any frontmatter.name (canonical identity)", () => {
+    // 두 다른 파일이 같은 frontmatter.name을 갖는 시나리오:
+    // 사이드바에서 React key 충돌이 일어나지 않게, 파일명이 우선이어야 한다.
+    const raw = `---\nname: test\ndescription: ok\n---\nbody`;
+    const docA = buildAgentDoc("test", raw);
+    const docB = buildAgentDoc("TestAgent", raw);
+    expect(docA.frontmatter.name).toBe("test");
+    expect(docB.frontmatter.name).toBe("TestAgent");
+    // 두 doc은 서로 다른 name을 갖는다 → React key 충돌 없음
+    expect(docA.frontmatter.name).not.toBe(docB.frontmatter.name);
+  });
 });

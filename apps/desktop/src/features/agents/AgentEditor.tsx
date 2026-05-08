@@ -119,7 +119,7 @@ export function AgentEditor({ projectPath, refreshSummary }: Props) {
             </li>
           )}
           {agents.data?.map((a) => (
-            <li key={a.frontmatter.name}>
+            <li key={a.filePath ?? a.frontmatter.name}>
               <button
                 type="button"
                 onClick={() => {

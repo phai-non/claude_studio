@@ -22,6 +22,10 @@ const agentPath = (project: string, name: string) =>
  * - strict 실패 → best-effort frontmatter + validationIssues 동반 (사용자가 폼에서
  *   고칠 수 있도록 silent drop 하지 않는다)
  *
+ * **파일명이 canonical name** — frontmatter에 name 필드가 있어도 파일명이 우선한다.
+ * 그렇지 않으면 두 다른 파일이 같은 frontmatter.name 을 갖는 경우 사이드바에서
+ * 같은 항목으로 보이는 React key 충돌이 발생한다 (둘 다 선택된 것처럼 보임).
+ *
  * 저장 시점에는 form의 zodResolver가 그대로 strict 검증을 수행한다.
  */
 export function buildAgentDoc(
@@ -30,7 +34,8 @@ export function buildAgentDoc(
   filePath?: string,
 ): AgentDoc {
   const { data, content } = parseDoc<Partial<AgentFrontmatter>>(raw);
-  const merged: Record<string, unknown> = { name, ...data };
+  // 순서 주의: data를 먼저 펼치고 name을 마지막에 — 파일명이 frontmatter.name을 덮어쓴다.
+  const merged: Record<string, unknown> = { ...data, name };
 
   const parsed = AgentFrontmatterSchema.safeParse(merged);
   if (parsed.success) {
@@ -44,7 +49,7 @@ export function buildAgentDoc(
 
   const knownModels = KNOWN_MODELS as readonly string[];
   const fallback: AgentFrontmatter = {
-    name,
+    name, // 파일명이 canonical
     description: typeof data.description === "string" ? data.description : "",
     tools: Array.isArray(data.tools)
       ? data.tools.filter((t): t is string => typeof t === "string")
