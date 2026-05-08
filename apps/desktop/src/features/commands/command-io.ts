@@ -89,10 +89,23 @@ export async function saveCommand(
   doc: CommandDoc,
 ): Promise<string> {
   const fm = CommandFrontmatterSchema.parse(doc.frontmatter);
-  const file = cmdPath(project, doc.name);
+  const newFile = cmdPath(project, doc.name);
   const serialized = stringifyDoc(fm, doc.body);
-  await writeTextFile(file, serialized);
-  return file;
+  await writeTextFile(newFile, serialized);
+
+  // Rename: 기존 파일 경로가 새 경로와 다르면 옛 파일 삭제 (orphan 방지)
+  if (doc.filePath && doc.filePath !== newFile) {
+    try {
+      await deleteFile(doc.filePath);
+    } catch (e) {
+      console.warn(
+        `Renamed command saved as ${newFile}, but failed to delete old file ${doc.filePath}:`,
+        e,
+      );
+    }
+  }
+
+  return newFile;
 }
 
 export async function deleteCommand(
