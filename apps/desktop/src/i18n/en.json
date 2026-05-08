@@ -95,6 +95,12 @@
     "missingSubtitle": "This app builds project-level .claude configurations, but the actual execution requires the Claude CLI.",
     "openInstallPage": "Open install page",
     "recheck": "Recheck",
-    "details": "Error details"
+    "details": "Error details",
+    "checkingLatest": "Checking for updates…",
+    "upToDate": "up to date",
+    "updateAvailable": "Update available → {{latest}}",
+    "openUpdateGuide": "Open update guide",
+    "latestSource": "Source: {{source}}",
+    "latestUnknown": "Could not fetch latest version"
   }
 }

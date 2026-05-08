@@ -128,3 +128,38 @@ export async function checkClaude(): Promise<ClaudeStatus> {
   }
   return await invoke<ClaudeStatus>("check_claude");
 }
+
+export interface LatestVersionInfo {
+  version: string;
+  source: string;
+}
+
+export async function checkClaudeLatest(): Promise<LatestVersionInfo> {
+  return await invoke<LatestVersionInfo>("check_claude_latest");
+}
+
+/**
+ * 단순 점-구분 정수 비교 (semver 가벼운 버전).
+ * 양수 = current가 더 낮음 (업데이트 필요)
+ * 0 = 동일
+ * 음수 = current가 더 높음 (preview/local build 가능성)
+ */
+export function compareDottedVersion(current: string, latest: string): number {
+  const norm = (v: string) =>
+    v
+      .trim()
+      .split(/\s+/)[0]!
+      .replace(/^v/i, "")
+      .split(".")
+      .map((s) => Number(s) || 0);
+  const a = norm(current);
+  const b = norm(latest);
+  const len = Math.max(a.length, b.length);
+  for (let i = 0; i < len; i++) {
+    const av = a[i] ?? 0;
+    const bv = b[i] ?? 0;
+    if (av < bv) return 1;
+    if (av > bv) return -1;
+  }
+  return 0;
+}

@@ -95,6 +95,12 @@
     "missingSubtitle": "이 앱은 프로젝트별 .claude 설정을 만드는 도구이며, 실제 실행은 Claude CLI가 필요합니다.",
     "openInstallPage": "설치 페이지 열기",
     "recheck": "다시 확인",
-    "details": "오류 상세"
+    "details": "오류 상세",
+    "checkingLatest": "최신 버전 확인 중…",
+    "upToDate": "최신",
+    "updateAvailable": "업데이트 있음 → {{latest}}",
+    "openUpdateGuide": "업데이트 안내 보기",
+    "latestSource": "출처: {{source}}",
+    "latestUnknown": "최신 버전 조회 실패"
   }
 }
