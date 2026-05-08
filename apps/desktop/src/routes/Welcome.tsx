@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useProjectStore } from "@/store/project";
 import { isTauri, pickFolder } from "@/lib/tauri";
 import { ClaudeStatusBanner } from "@/features/claude-check/ClaudeStatusBanner";
+import { AppUpdateBanner } from "@/features/app-update/AppUpdateBanner";
 
 export function WelcomeRoute() {
   const { t } = useTranslation();
@@ -65,6 +66,7 @@ export function WelcomeRoute() {
         <p className="mt-2 text-muted-foreground">{t("welcome.subtitle")}</p>
 
         <ClaudeStatusBanner />
+        <AppUpdateBanner />
 
         <Button size="lg" className="mt-6" onClick={openFolder}>
           <FolderOpen />

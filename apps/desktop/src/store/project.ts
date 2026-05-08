@@ -41,8 +41,11 @@ export const useProjectStore = create<ProjectStore>()(
 interface SettingsStore {
   theme: "light" | "dark" | "system";
   marketplaceIndexUrl: string;
+  /** GitHub Releases 기반 앱 업데이트 체크 대상. "owner/repo" 형식. 빈 값이면 비활성. */
+  appUpdateRepo: string;
   setTheme: (theme: SettingsStore["theme"]) => void;
   setMarketplaceIndexUrl: (url: string) => void;
+  setAppUpdateRepo: (repo: string) => void;
 }
 
 const DEFAULT_INDEX_URL =
@@ -53,8 +56,10 @@ export const useSettingsStore = create<SettingsStore>()(
     (set) => ({
       theme: "system",
       marketplaceIndexUrl: DEFAULT_INDEX_URL,
+      appUpdateRepo: "",
       setTheme: (theme) => set({ theme }),
       setMarketplaceIndexUrl: (url) => set({ marketplaceIndexUrl: url }),
+      setAppUpdateRepo: (repo) => set({ appUpdateRepo: repo.trim() }),
     }),
     { name: "cs.settings" },
   ),
