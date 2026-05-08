@@ -96,28 +96,54 @@ pub fn read_tool_hints(project_path: Option<String>) -> AppResult<ToolHints> {
         });
     }
 
-    // 2) ~/.claude/settings.json
+    // 2) ~/.claude/settings.json + ~/.claude/mcp.json + ~/.claude.json
     if let Some(home) = dirs_home() {
         let global_settings = home.join(".claude/settings.json");
         if let Some(j) = read_json(&global_settings) {
             collect_settings(&j, &global_settings.display().to_string(), &mut hints);
         }
-        let global_mcp = home.join(".claude/mcp.json");
-        if let Some(j) = read_json(&global_mcp) {
-            collect_mcp(&j, &global_mcp.display().to_string(), &mut hints);
+        let global_mcp_legacy = home.join(".claude/mcp.json");
+        if let Some(j) = read_json(&global_mcp_legacy) {
+            collect_mcp(&j, &global_mcp_legacy.display().to_string(), &mut hints);
+        }
+
+        // ~/.claude.json — Claude Code의 메인 설정.
+        // 최상위 mcpServers (글로벌) + projects.<path>.mcpServers (프로젝트별).
+        let global_state = home.join(".claude.json");
+        if let Some(j) = read_json(&global_state) {
+            let origin = global_state.display().to_string();
+            collect_mcp(&j, &origin, &mut hints);
+            // 프로젝트별 항목
+            if let Some(project) = project_path.as_deref() {
+                if let Some(per_project) = j
+                    .get("projects")
+                    .and_then(|p| p.get(project))
+                {
+                    collect_mcp(
+                        per_project,
+                        &format!("{origin} → projects[{project}]"),
+                        &mut hints,
+                    );
+                    collect_settings(
+                        per_project,
+                        &format!("{origin} → projects[{project}]"),
+                        &mut hints,
+                    );
+                }
+            }
         }
     }
 
     // 3) 프로젝트 .claude/settings.json{,.local.json}, .mcp.json
     if let Some(project) = project_path.as_deref() {
-        let project = Path::new(project);
+        let project_dir = Path::new(project);
         for fname in ["settings.json", "settings.local.json"] {
-            let p = project.join(".claude").join(fname);
+            let p = project_dir.join(".claude").join(fname);
             if let Some(j) = read_json(&p) {
                 collect_settings(&j, &p.display().to_string(), &mut hints);
             }
         }
-        let mcp = project.join(".mcp.json");
+        let mcp = project_dir.join(".mcp.json");
         if let Some(j) = read_json(&mcp) {
             collect_mcp(&j, &mcp.display().to_string(), &mut hints);
         }
