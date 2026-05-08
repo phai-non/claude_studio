@@ -25,7 +25,7 @@ export const AgentFrontmatterSchema = z.object({
     .string()
     .min(1, "agent.validation.nameRequired")
     .regex(KEBAB_RE, "agent.validation.nameKebab"),
-  description: z.string().min(10, "agent.validation.descriptionMin"),
+  description: z.string().min(1, "agent.validation.descriptionMin"),
   tools: z.array(z.string()).optional(),
   model: z.enum(KNOWN_MODELS).optional(),
   color: z.string().optional(),
@@ -33,11 +33,21 @@ export const AgentFrontmatterSchema = z.object({
 
 export type AgentFrontmatter = z.infer<typeof AgentFrontmatterSchema>;
 
+export interface ValidationIssue {
+  path: string[];
+  message: string;
+}
+
 export interface AgentDoc {
   frontmatter: AgentFrontmatter;
   body: string;
   /** 파일 절대 경로 (저장된 경우만 존재) */
   filePath?: string;
+  /**
+   * 디스크에서 읽을 때 strict 스키마 검증을 통과하지 못한 경우의 이슈 목록.
+   * 새로 생성한 draft에는 undefined.
+   */
+  validationIssues?: ValidationIssue[];
 }
 
 /** 사용자 입력에서 kebab-case 후보 자동 생성 */

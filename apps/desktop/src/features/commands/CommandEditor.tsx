@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Plus, ScrollText } from "lucide-react";
+import { AlertTriangle, Plus, ScrollText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -109,9 +109,19 @@ export function CommandEditor({ projectPath, refreshSummary }: Props) {
                     : "hover:bg-accent/50",
                 )}
               >
-                <div className="font-medium">/{c.name}</div>
+                <div className="flex items-center gap-1.5">
+                  <span className="truncate font-medium">/{c.name}</span>
+                  {c.validationIssues && c.validationIssues.length > 0 && (
+                    <AlertTriangle
+                      className="size-3 shrink-0 text-amber-500"
+                      aria-label="검증 이슈"
+                    />
+                  )}
+                </div>
                 <div className="line-clamp-1 text-xs text-muted-foreground">
-                  {c.frontmatter.description}
+                  {c.frontmatter.description || (
+                    <em className="opacity-60">(설명 없음)</em>
+                  )}
                 </div>
               </button>
             </li>

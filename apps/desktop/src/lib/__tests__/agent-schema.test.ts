@@ -24,12 +24,20 @@ describe("AgentFrontmatterSchema", () => {
     }
   });
 
-  it("rejects descriptions shorter than 10 chars", () => {
+  it("rejects empty descriptions", () => {
     const r = AgentFrontmatterSchema.safeParse({
       name: "x",
-      description: "short",
+      description: "",
     });
     expect(r.success).toBe(false);
+  });
+
+  it("accepts short non-empty descriptions", () => {
+    const r = AgentFrontmatterSchema.safeParse({
+      name: "x",
+      description: "ok",
+    });
+    expect(r.success).toBe(true);
   });
 });
 

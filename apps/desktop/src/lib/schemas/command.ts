@@ -16,6 +16,8 @@ export interface CommandDoc {
   frontmatter: CommandFrontmatter;
   body: string;
   filePath?: string;
+  /** 디스크에서 strict 스키마 검증을 통과하지 못한 경우의 이슈 목록 */
+  validationIssues?: { path: string[]; message: string }[];
 }
 
 export function isValidCommandName(name: string): boolean {

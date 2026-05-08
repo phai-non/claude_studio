@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
-import { Save, Trash2, Wand2 } from "lucide-react";
+import { AlertTriangle, Save, Trash2, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -94,6 +94,24 @@ export function CommandForm({
 
   return (
     <form onSubmit={submit} className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      {initial?.validationIssues && initial.validationIssues.length > 0 && (
+        <div className="rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-xs lg:col-span-2">
+          <div className="flex items-center gap-1.5 font-medium text-amber-700 dark:text-amber-300">
+            <AlertTriangle className="size-3.5" />
+            이 파일에 검증 이슈가 있습니다 — 수정 후 저장하면 정상화됩니다.
+          </div>
+          <ul className="mt-1 list-disc space-y-0.5 pl-5 text-amber-700/80 dark:text-amber-200/80">
+            {initial.validationIssues.map((iss, i) => (
+              <li key={i}>
+                <span className="font-mono">
+                  {iss.path.join(".") || "(root)"}
+                </span>
+                : {iss.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="space-y-4">
         <div>
           <Label htmlFor="cmd-name">{t("command.name")}</Label>
