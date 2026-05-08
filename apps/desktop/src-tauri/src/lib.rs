@@ -2,9 +2,10 @@ mod commands;
 mod error;
 
 use commands::{
-    delete_file, ensure_claude_dir, fetch_text, list_agents, list_commands,
-    pick_folder, pty_close, pty_open, pty_resize, pty_write,
-    read_project_summary, read_text_file, read_tool_hints, write_text_file,
+    delete_file, discover_mcp_tools, ensure_claude_dir, fetch_text,
+    list_agents, list_commands, list_mcp_servers, pick_folder, pty_close,
+    pty_open, pty_resize, pty_write, read_project_summary, read_text_file,
+    read_tool_hints, write_text_file,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -30,6 +31,8 @@ pub fn run() {
             pty_resize,
             pty_close,
             read_tool_hints,
+            list_mcp_servers,
+            discover_mcp_tools,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

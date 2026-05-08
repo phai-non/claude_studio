@@ -75,3 +75,43 @@ export async function readToolHints(
   if (!isTauri()) return { hints: [], warnings: ["non-tauri"] };
   return await invoke<ToolHints>("read_tool_hints", { projectPath });
 }
+
+export type ServerKind = "stdio" | "http";
+
+export interface ConfiguredMcpServer {
+  name: string;
+  kind: ServerKind;
+  origin: string;
+  command_preview?: string;
+  url?: string;
+}
+
+export interface DiscoveredTool {
+  name: string;
+  description?: string;
+}
+
+export interface DiscoveryResult {
+  server: string;
+  tools: DiscoveredTool[];
+  error?: string;
+}
+
+export async function listMcpServers(
+  projectPath?: string,
+): Promise<ConfiguredMcpServer[]> {
+  if (!isTauri()) return [];
+  return await invoke<ConfiguredMcpServer[]>("list_mcp_servers", {
+    projectPath,
+  });
+}
+
+export async function discoverMcpTools(
+  serverName: string,
+  projectPath?: string,
+): Promise<DiscoveryResult> {
+  return await invoke<DiscoveryResult>("discover_mcp_tools", {
+    serverName,
+    projectPath,
+  });
+}

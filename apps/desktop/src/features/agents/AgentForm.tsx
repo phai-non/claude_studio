@@ -17,7 +17,12 @@ import {
   type AgentDoc,
   type AgentFrontmatter,
 } from "@/lib/schemas/agent";
-import { readToolHints, type ToolHint } from "@/lib/tauri";
+import {
+  listMcpServers,
+  readToolHints,
+  type ToolHint,
+} from "@/lib/tauri";
+import { McpServerGroup } from "./McpServerGroup";
 import { cn } from "@/lib/utils";
 
 const FormSchema = z.object({
@@ -55,6 +60,11 @@ export function AgentForm({
   const toolHintsQuery = useQuery({
     queryKey: ["tool-hints", projectPath],
     queryFn: () => readToolHints(projectPath),
+  });
+
+  const mcpServersQuery = useQuery({
+    queryKey: ["mcp-servers", projectPath],
+    queryFn: () => listMcpServers(projectPath),
   });
 
   const groupedHints = useMemo(() => {
@@ -242,14 +252,29 @@ export function AgentForm({
             label={`Settings (${groupedHints.settings.length})`}
             hints={groupedHints.settings}
             onPick={appendTool}
-            note="permissions.allow 에서 추출"
+            note="permissions.allow"
           />
-          <ToolHintGroup
-            label={`MCP (${groupedHints.mcp.length})`}
-            hints={groupedHints.mcp}
-            onPick={appendTool}
-            note="mcp.json 의 mcpServers 키"
-          />
+
+          <div className="mt-3">
+            <div className="flex items-baseline justify-between">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                MCP servers ({mcpServersQuery.data?.length ?? 0})
+              </span>
+              <span className="text-[10px] text-muted-foreground/70">
+                펼치면 spawn → tools/list 호출
+              </span>
+            </div>
+            <div className="mt-1 space-y-1">
+              {mcpServersQuery.data?.map((server) => (
+                <McpServerGroup
+                  key={server.name}
+                  server={server}
+                  projectPath={projectPath}
+                  onPick={appendTool}
+                />
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-col gap-2 pt-4">
