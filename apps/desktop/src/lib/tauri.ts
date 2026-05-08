@@ -55,3 +55,23 @@ export async function deleteFile(path: string): Promise<void> {
 export async function fetchText(url: string): Promise<string> {
   return await invoke<string>("fetch_text", { url });
 }
+
+export type ToolHintSource = "builtin" | "settings" | "mcp";
+
+export interface ToolHint {
+  name: string;
+  source: ToolHintSource;
+  origin: string;
+}
+
+export interface ToolHints {
+  hints: ToolHint[];
+  warnings: string[];
+}
+
+export async function readToolHints(
+  projectPath?: string,
+): Promise<ToolHints> {
+  if (!isTauri()) return { hints: [], warnings: ["non-tauri"] };
+  return await invoke<ToolHints>("read_tool_hints", { projectPath });
+}

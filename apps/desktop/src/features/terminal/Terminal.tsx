@@ -35,7 +35,8 @@ export function TerminalView({ projectPath }: Props) {
   const [running, setRunning] = useState(false);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const container = containerRef.current;
+    if (!container) return;
     if (!isTauri()) {
       setError("터미널은 Tauri 환경에서만 동작합니다.");
       return;
@@ -51,40 +52,74 @@ export function TerminalView({ projectPath }: Props) {
         cursor: "#e7e7e7",
       },
       scrollback: 5000,
+      allowProposedApi: true,
     });
     const fit = new FitAddon();
     const links = new WebLinksAddon();
     term.loadAddon(fit);
     term.loadAddon(links);
-    term.open(containerRef.current);
-    requestAnimationFrame(() => fit.fit());
+    term.open(container);
 
     xtermRef.current = term;
     fitRef.current = fit;
 
     let cleaned = false;
+    let sessionId: string | null = null;
+
+    /** 컨테이너 크기에 맞춰 xterm fit + PTY 리사이즈 */
+    const refit = () => {
+      if (cleaned) return;
+      try {
+        fit.fit();
+      } catch {
+        return;
+      }
+      const cols = term.cols;
+      const rows = term.rows;
+      const sid = sessionRef.current;
+      if (sid && cols > 0 && rows > 0) {
+        void invoke("pty_resize", { sessionId: sid, cols, rows });
+      }
+    };
+
+    // ResizeObserver: 컨테이너가 실제로 레이아웃된 뒤 호출되며,
+    // 탭 전환·창 크기 변화·초기 마운트 모두 한 경로로 처리한다.
+    const ro = new ResizeObserver(() => refit());
+    ro.observe(container);
 
     const start = async () => {
       try {
+        // 컨테이너 레이아웃이 안정될 때까지 한 프레임 대기
+        await new Promise((r) => requestAnimationFrame(() => r(null)));
+        try {
+          fit.fit();
+        } catch {
+          /* container not measurable yet — ResizeObserver will retry */
+        }
+        const cols = Math.max(term.cols, 80);
+        const rows = Math.max(term.rows, 24);
+
         setRunning(true);
-        const cols = term.cols;
-        const rows = term.rows;
-        const sessionId: string = await invoke("pty_open", {
+        const id: string = await invoke("pty_open", {
           cwd: projectPath,
           program: "claude",
           args: [],
           cols,
           rows,
         });
-        sessionRef.current = sessionId;
+        if (cleaned) {
+          // 마운트 해제 직후 응답이 와도 안전하게 닫는다
+          void invoke("pty_close", { sessionId: id });
+          return;
+        }
+        sessionId = id;
+        sessionRef.current = id;
 
         const unData = await listen<PtyDataEvent>("pty:data", (e) => {
-          if (e.payload.session_id === sessionId) {
-            term.write(e.payload.chunk);
-          }
+          if (e.payload.session_id === id) term.write(e.payload.chunk);
         });
         const unExit = await listen<PtyExitEvent>("pty:exit", (e) => {
-          if (e.payload.session_id === sessionId) {
+          if (e.payload.session_id === id) {
             term.write("\r\n\x1b[90m[claude exited]\x1b[0m\r\n");
             sessionRef.current = null;
             setRunning(false);
@@ -93,13 +128,12 @@ export function TerminalView({ projectPath }: Props) {
         unlistenRef.current.push(unData, unExit);
 
         term.onData((data) => {
-          if (sessionRef.current) {
-            void invoke("pty_write", {
-              sessionId: sessionRef.current,
-              data,
-            });
-          }
+          const sid = sessionRef.current;
+          if (sid) void invoke("pty_write", { sessionId: sid, data });
         });
+
+        // PTY가 열린 직후 한 번 더 리사이즈를 강제해 첫 프레임 폭을 맞춘다
+        refit();
       } catch (e) {
         if (!cleaned) {
           setError(String(e));
@@ -112,56 +146,47 @@ export function TerminalView({ projectPath }: Props) {
 
     void start();
 
-    const onResize = () => {
-      try {
-        fit.fit();
-      } catch {
-        /* noop */
-      }
-      const sessionId = sessionRef.current;
-      if (sessionId) {
-        void invoke("pty_resize", {
-          sessionId,
-          cols: term.cols,
-          rows: term.rows,
-        });
-      }
-    };
-    window.addEventListener("resize", onResize);
-
     return () => {
       cleaned = true;
-      window.removeEventListener("resize", onResize);
+      ro.disconnect();
       for (const un of unlistenRef.current) un();
       unlistenRef.current = [];
-      const sessionId = sessionRef.current;
-      if (sessionId) {
-        void invoke("pty_close", { sessionId });
-      }
+      const sid = sessionId ?? sessionRef.current;
+      if (sid) void invoke("pty_close", { sessionId: sid });
       sessionRef.current = null;
       term.dispose();
       xtermRef.current = null;
+      fitRef.current = null;
     };
   }, [projectPath, t]);
 
   const restart = async () => {
-    if (!xtermRef.current) return;
+    if (!xtermRef.current || !fitRef.current) return;
     const term = xtermRef.current;
+    const fit = fitRef.current;
     if (sessionRef.current) {
       await invoke("pty_close", { sessionId: sessionRef.current });
+      sessionRef.current = null;
     }
     term.clear();
     setError(null);
     setRunning(true);
     try {
-      const sessionId: string = await invoke("pty_open", {
+      try {
+        fit.fit();
+      } catch {
+        /* noop */
+      }
+      const cols = Math.max(term.cols, 80);
+      const rows = Math.max(term.rows, 24);
+      const id: string = await invoke("pty_open", {
         cwd: projectPath,
         program: "claude",
         args: [],
-        cols: term.cols,
-        rows: term.rows,
+        cols,
+        rows,
       });
-      sessionRef.current = sessionId;
+      sessionRef.current = id;
     } catch (e) {
       setError(String(e));
       setRunning(false);
@@ -181,7 +206,7 @@ export function TerminalView({ projectPath }: Props) {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center justify-between border-b px-4 py-2">
         <h3 className="flex items-center gap-2 text-sm font-medium">
           <TerminalIcon className="size-4" />
@@ -197,8 +222,8 @@ export function TerminalView({ projectPath }: Props) {
           재시작
         </Button>
       </div>
-      <div className="relative flex-1 bg-[#0b0b0b] p-2">
-        <div ref={containerRef} className="h-full w-full" />
+      <div className="relative min-h-0 flex-1 overflow-hidden bg-[#0b0b0b]">
+        <div ref={containerRef} className="absolute inset-0" />
         {error && (
           <div className="absolute right-3 top-3 max-w-md rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
             {error}

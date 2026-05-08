@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,11 +13,11 @@ import { Save, Trash2, Wand2 } from "lucide-react";
 import {
   KEBAB_RE,
   KNOWN_MODELS,
-  KNOWN_TOOLS,
   suggestKebabName,
   type AgentDoc,
   type AgentFrontmatter,
 } from "@/lib/schemas/agent";
+import { readToolHints, type ToolHint } from "@/lib/tauri";
 import { cn } from "@/lib/utils";
 
 const FormSchema = z.object({
@@ -34,6 +35,7 @@ type AgentFormValues = z.input<typeof FormSchema>;
 
 interface AgentFormProps {
   initial?: AgentDoc;
+  projectPath?: string;
   onSave: (doc: AgentDoc) => Promise<void> | void;
   onCancel?: () => void;
   onDelete?: () => Promise<void> | void;
@@ -42,12 +44,29 @@ interface AgentFormProps {
 
 export function AgentForm({
   initial,
+  projectPath,
   onSave,
   onCancel,
   onDelete,
   isSaving,
 }: AgentFormProps) {
   const { t } = useTranslation();
+
+  const toolHintsQuery = useQuery({
+    queryKey: ["tool-hints", projectPath],
+    queryFn: () => readToolHints(projectPath),
+  });
+
+  const groupedHints = useMemo(() => {
+    const all = toolHintsQuery.data?.hints ?? [];
+    const groups: Record<ToolHint["source"], ToolHint[]> = {
+      builtin: [],
+      settings: [],
+      mcp: [],
+    };
+    for (const h of all) groups[h.source].push(h);
+    return groups;
+  }, [toolHintsQuery.data]);
 
   const defaults: AgentFormValues = useMemo(
     () => ({
@@ -85,6 +104,16 @@ export function AgentForm({
     const s = suggestKebabName(nameValue);
     return s && s !== nameValue ? s : null;
   }, [nameValue]);
+
+  const appendTool = (tool: string) => {
+    const current = watch("toolsCsv") ?? "";
+    const arr = current
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (arr.includes(tool)) return;
+    setValue("toolsCsv", [...arr, tool].join(", "), { shouldDirty: true });
+  };
 
   const submit = handleSubmit(async (values) => {
     const tools = (values.toolsCsv ?? "")
@@ -200,28 +229,27 @@ export function AgentForm({
           <p className="mt-1 text-xs text-muted-foreground">
             {t("agent.toolsHint")}
           </p>
-          <div className="mt-2 flex flex-wrap gap-1">
-            {KNOWN_TOOLS.map((tool) => (
-              <Badge
-                key={tool}
-                variant="outline"
-                className="cursor-pointer"
-                onClick={() => {
-                  const current = watch("toolsCsv") ?? "";
-                  const arr = current
-                    .split(",")
-                    .map((s) => s.trim())
-                    .filter(Boolean);
-                  if (arr.includes(tool)) return;
-                  setValue("toolsCsv", [...arr, tool].join(", "), {
-                    shouldDirty: true,
-                  });
-                }}
-              >
-                + {tool}
-              </Badge>
-            ))}
-          </div>
+          <p className="mt-1 text-[11px] text-muted-foreground/80">
+            ⚠ 아래 배지는 흔히 쓰이는 후보일 뿐 — 실제 사용 가능한 툴 전체 목록이 아닙니다. CSV에 직접 입력해도 됩니다.
+          </p>
+
+          <ToolHintGroup
+            label="Built-in"
+            hints={groupedHints.builtin}
+            onPick={appendTool}
+          />
+          <ToolHintGroup
+            label={`Settings (${groupedHints.settings.length})`}
+            hints={groupedHints.settings}
+            onPick={appendTool}
+            note="permissions.allow 에서 추출"
+          />
+          <ToolHintGroup
+            label={`MCP (${groupedHints.mcp.length})`}
+            hints={groupedHints.mcp}
+            onPick={appendTool}
+            note="mcp.json 의 mcpServers 키"
+          />
         </div>
 
         <div className="flex flex-col gap-2 pt-4">
@@ -247,5 +275,41 @@ export function AgentForm({
         </div>
       </div>
     </form>
+  );
+}
+
+interface ToolHintGroupProps {
+  label: string;
+  hints: ToolHint[];
+  onPick: (name: string) => void;
+  note?: string;
+}
+
+function ToolHintGroup({ label, hints, onPick, note }: ToolHintGroupProps) {
+  if (hints.length === 0) return null;
+  return (
+    <div className="mt-3">
+      <div className="flex items-baseline justify-between">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </span>
+        {note && (
+          <span className="text-[10px] text-muted-foreground/70">{note}</span>
+        )}
+      </div>
+      <div className="mt-1 flex flex-wrap gap-1">
+        {hints.map((h) => (
+          <Badge
+            key={`${h.source}:${h.name}`}
+            variant="outline"
+            className="cursor-pointer"
+            title={h.origin}
+            onClick={() => onPick(h.name)}
+          >
+            + {h.name}
+          </Badge>
+        ))}
+      </div>
+    </div>
   );
 }

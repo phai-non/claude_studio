@@ -140,6 +140,7 @@ export function AgentEditor({ projectPath, refreshSummary }: Props) {
             <AgentForm
               key={current.filePath ?? "new"}
               initial={current}
+              projectPath={projectPath}
               isSaving={saving}
               onSave={handleSave}
               onCancel={
