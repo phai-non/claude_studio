@@ -1,0 +1,90 @@
+{
+  "app": {
+    "name": "Claude Studio",
+    "tagline": ".claude 폴더를 GUI로 손쉽게 관리하세요"
+  },
+  "welcome": {
+    "title": "Claude Studio에 오신 것을 환영합니다",
+    "subtitle": "프로젝트 폴더를 열어 agent · slash command · CLAUDE.md를 폼으로 편집하세요.",
+    "openFolder": "프로젝트 폴더 열기",
+    "recentProjects": "최근 프로젝트",
+    "emptyRecent": "아직 열어본 프로젝트가 없습니다. 폴더를 열어 시작하세요.",
+    "remove": "목록에서 제거"
+  },
+  "workspace": {
+    "tabs": {
+      "agents": "Agents",
+      "commands": "Commands",
+      "claudeMd": "CLAUDE.md",
+      "marketplace": "Marketplace",
+      "terminal": "Terminal"
+    },
+    "back": "← 다른 프로젝트 열기",
+    "newAgent": "+ 새 Agent",
+    "newCommand": "+ 새 Command",
+    "noItems": "아직 항목이 없습니다.",
+    "create": "새로 만들기"
+  },
+  "agent": {
+    "name": "이름 (kebab-case)",
+    "namePlaceholder": "예: code-reviewer",
+    "description": "설명",
+    "descriptionPlaceholder": "이 agent가 어떤 일을 하는지 한 문장으로",
+    "tools": "도구",
+    "toolsHint": "쉼표로 구분 — 예: Read, Edit, Bash",
+    "model": "모델",
+    "body": "시스템 프롬프트",
+    "save": "저장",
+    "cancel": "취소",
+    "delete": "삭제",
+    "validation": {
+      "nameRequired": "이름을 입력하세요",
+      "nameKebab": "이름은 소문자/숫자/하이픈만 허용됩니다 (kebab-case)",
+      "descriptionMin": "설명은 10자 이상이어야 합니다",
+      "suggest": "추천: {{value}}",
+      "applySuggest": "자동 수정 적용"
+    }
+  },
+  "command": {
+    "name": "명령어 이름 (/없이)",
+    "namePlaceholder": "예: commit",
+    "description": "설명",
+    "argumentHint": "인자 힌트",
+    "allowedTools": "허용 도구",
+    "body": "프롬프트 본문"
+  },
+  "claudeMd": {
+    "title": "프로젝트 메모리 (CLAUDE.md)",
+    "preview": "미리보기",
+    "edit": "편집"
+  },
+  "marketplace": {
+    "title": "템플릿 마켓플레이스",
+    "subtitle": "내장 + GitHub 인덱스에서 가져온 템플릿을 프로젝트로 추가하세요.",
+    "addToProject": "프로젝트에 추가",
+    "preview": "미리보기",
+    "source": "출처",
+    "fetchError": "마켓플레이스 인덱스를 가져오지 못했습니다.",
+    "indexUrl": "인덱스 URL"
+  },
+  "terminal": {
+    "title": "내장 터미널",
+    "starting": "claude 시작 중…",
+    "noBinary": "claude CLI를 찾을 수 없습니다. 설치 후 다시 시도하세요."
+  },
+  "settings": {
+    "title": "설정",
+    "language": "언어",
+    "theme": "테마",
+    "themeLight": "라이트",
+    "themeDark": "다크",
+    "themeSystem": "시스템"
+  },
+  "common": {
+    "save": "저장",
+    "cancel": "취소",
+    "ok": "확인",
+    "saved": "저장됨",
+    "saving": "저장 중…"
+  }
+}

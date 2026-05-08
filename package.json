@@ -1,0 +1,22 @@
+{
+  "name": "claude-studio",
+  "private": true,
+  "version": "0.0.1",
+  "description": "GUI builder for .claude/ project configurations (agents, commands, CLAUDE.md)",
+  "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun --filter=desktop run dev",
+    "tauri": "bun --filter=desktop run tauri",
+    "tauri:dev": "bun --filter=desktop run tauri dev",
+    "tauri:build": "bun --filter=desktop run tauri build",
+    "build": "bun --filter=desktop run build",
+    "test": "bun --filter=desktop run test"
+  },
+  "engines": {
+    "bun": ">=1.2.0"
+  }
+}

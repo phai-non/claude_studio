@@ -1,0 +1,90 @@
+{
+  "app": {
+    "name": "Claude Studio",
+    "tagline": "Manage your .claude/ folder visually"
+  },
+  "welcome": {
+    "title": "Welcome to Claude Studio",
+    "subtitle": "Open a project folder to edit agents, slash commands, and CLAUDE.md with forms.",
+    "openFolder": "Open Project Folder",
+    "recentProjects": "Recent Projects",
+    "emptyRecent": "No recent projects yet. Open a folder to get started.",
+    "remove": "Remove from list"
+  },
+  "workspace": {
+    "tabs": {
+      "agents": "Agents",
+      "commands": "Commands",
+      "claudeMd": "CLAUDE.md",
+      "marketplace": "Marketplace",
+      "terminal": "Terminal"
+    },
+    "back": "← Open another project",
+    "newAgent": "+ New Agent",
+    "newCommand": "+ New Command",
+    "noItems": "No items yet.",
+    "create": "Create"
+  },
+  "agent": {
+    "name": "Name (kebab-case)",
+    "namePlaceholder": "e.g. code-reviewer",
+    "description": "Description",
+    "descriptionPlaceholder": "One sentence: what does this agent do?",
+    "tools": "Tools",
+    "toolsHint": "Comma-separated — e.g. Read, Edit, Bash",
+    "model": "Model",
+    "body": "System Prompt",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "validation": {
+      "nameRequired": "Name is required",
+      "nameKebab": "Only lowercase letters, digits, and hyphens (kebab-case)",
+      "descriptionMin": "Description must be at least 10 characters",
+      "suggest": "Suggestion: {{value}}",
+      "applySuggest": "Apply suggestion"
+    }
+  },
+  "command": {
+    "name": "Command name (no slash)",
+    "namePlaceholder": "e.g. commit",
+    "description": "Description",
+    "argumentHint": "Argument hint",
+    "allowedTools": "Allowed tools",
+    "body": "Prompt body"
+  },
+  "claudeMd": {
+    "title": "Project Memory (CLAUDE.md)",
+    "preview": "Preview",
+    "edit": "Edit"
+  },
+  "marketplace": {
+    "title": "Template Marketplace",
+    "subtitle": "Built-in templates plus a GitHub index — add them straight into your project.",
+    "addToProject": "Add to project",
+    "preview": "Preview",
+    "source": "Source",
+    "fetchError": "Failed to load the marketplace index.",
+    "indexUrl": "Index URL"
+  },
+  "terminal": {
+    "title": "Embedded Terminal",
+    "starting": "Starting claude…",
+    "noBinary": "Could not find the claude CLI. Install it and try again."
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "ok": "OK",
+    "saved": "Saved",
+    "saving": "Saving…"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "version": "1",
+  "templates": [
+    {
+      "id": "builtin-code-reviewer",
+      "type": "agent",
+      "name": "Code Reviewer",
+      "description": "PR/diff를 검토하는 시니어 리뷰어",
+      "author": "Claude Studio (built-in)",
+      "tags": ["review", "quality"],
+      "source": "builtin:agents/code-reviewer.md"
+    },
+    {
+      "id": "builtin-test-writer",
+      "type": "agent",
+      "name": "Test Writer",
+      "description": "누락된 테스트를 작성한다",
+      "author": "Claude Studio (built-in)",
+      "tags": ["testing", "tdd"],
+      "source": "builtin:agents/test-writer.md"
+    },
+    {
+      "id": "builtin-debugger",
+      "type": "agent",
+      "name": "Debugger",
+      "description": "에러를 체계적으로 디버그한다",
+      "author": "Claude Studio (built-in)",
+      "tags": ["debug"],
+      "source": "builtin:agents/debugger.md"
+    },
+    {
+      "id": "builtin-commit",
+      "type": "command",
+      "name": "/commit",
+      "description": "Conventional Commits 메시지로 커밋",
+      "author": "Claude Studio (built-in)",
+      "tags": ["git", "workflow"],
+      "source": "builtin:commands/commit.md"
+    },
+    {
+      "id": "builtin-explain",
+      "type": "command",
+      "name": "/explain",
+      "description": "코드/심볼을 사람에게 설명",
+      "author": "Claude Studio (built-in)",
+      "tags": ["docs", "learning"],
+      "source": "builtin:commands/explain.md"
+    }
+  ]
+}
