@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import {
   AlertTriangle,
   Loader2,
@@ -36,7 +37,6 @@ export function CommandEditor({ projectPath, refreshSummary }: Props) {
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState<CommandDoc | null>(null);
   const [saving, setSaving] = useState(false);
-  const [savedAt, setSavedAt] = useState<number | null>(null);
 
   const list = useQuery({
     queryKey: ["commands", projectPath],
@@ -60,18 +60,25 @@ export function CommandEditor({ projectPath, refreshSummary }: Props) {
       refreshSummary();
       setDraft(null);
       setSelected(doc.name);
-      setSavedAt(Date.now());
+      toast.success(t("common.saved"), { description: `/${doc.name}` });
+    } catch (e) {
+      toast.error(t("agent.save"), { description: String(e) });
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (name: string) => {
-    await deleteCommand(projectPath, name);
-    await qc.invalidateQueries({ queryKey: ["commands", projectPath] });
-    refreshSummary();
-    setSelected(null);
-    setDraft(null);
+    try {
+      await deleteCommand(projectPath, name);
+      await qc.invalidateQueries({ queryKey: ["commands", projectPath] });
+      refreshSummary();
+      setSelected(null);
+      setDraft(null);
+      toast.success(t("agent.delete"), { description: `/${name}` });
+    } catch (e) {
+      toast.error(t("agent.delete"), { description: String(e) });
+    }
   };
 
   return (
@@ -162,30 +169,23 @@ export function CommandEditor({ projectPath, refreshSummary }: Props) {
             </CardContent>
           </Card>
         ) : (
-          <>
-            {savedAt && (
-              <div className="mb-3 inline-flex rounded-md bg-emerald-500/10 px-3 py-1 text-xs text-emerald-700 dark:text-emerald-400">
-                {t("common.saved")} ✓
-              </div>
-            )}
-            <CommandForm
-              key={current.filePath ?? "new"}
-              initial={current}
-              isSaving={saving}
-              onSave={handleSave}
-              onCancel={
-                draft
-                  ? () => {
-                      setDraft(null);
-                      setSelected(list.data?.[0]?.name ?? null);
-                    }
-                  : undefined
-              }
-              onDelete={
-                current.filePath ? () => handleDelete(current.name) : undefined
-              }
-            />
-          </>
+          <CommandForm
+            key={current.filePath ?? "new"}
+            initial={current}
+            isSaving={saving}
+            onSave={handleSave}
+            onCancel={
+              draft
+                ? () => {
+                    setDraft(null);
+                    setSelected(list.data?.[0]?.name ?? null);
+                  }
+                : undefined
+            }
+            onDelete={
+              current.filePath ? () => handleDelete(current.name) : undefined
+            }
+          />
         )}
       </div>
     </div>

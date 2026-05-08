@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Loader2, RotateCw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,7 +23,6 @@ export function ClaudeMdEditor({ projectPath, refreshSummary }: Props) {
 
   const [draft, setDraft] = useState<string>("");
   const [saving, setSaving] = useState(false);
-  const [savedAt, setSavedAt] = useState<number | null>(null);
 
   const initial = useQuery({
     queryKey: ["claude-md", projectPath],
@@ -47,7 +47,9 @@ export function ClaudeMdEditor({ projectPath, refreshSummary }: Props) {
       await writeTextFile(file, draft);
       await qc.invalidateQueries({ queryKey: ["claude-md", projectPath] });
       refreshSummary();
-      setSavedAt(Date.now());
+      toast.success(t("common.saved"), { description: "CLAUDE.md" });
+    } catch (e) {
+      toast.error(t("agent.save"), { description: String(e) });
     } finally {
       setSaving(false);
     }
@@ -61,11 +63,6 @@ export function ClaudeMdEditor({ projectPath, refreshSummary }: Props) {
           <p className="text-xs text-muted-foreground">{file}</p>
         </div>
         <div className="flex items-center gap-2">
-          {savedAt && (
-            <span className="text-xs text-emerald-600 dark:text-emerald-400">
-              {t("common.saved")} ✓
-            </span>
-          )}
           <Button
             size="icon"
             variant="ghost"

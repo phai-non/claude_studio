@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { Bot, Download, Loader2, RotateCw, ScrollText, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,7 +32,6 @@ export function MarketplaceGallery({ projectPath, refreshSummary }: Props) {
   const indexUrl = useSettingsStore((s) => s.marketplaceIndexUrl);
   const [filter, setFilter] = useState("");
   const [preview, setPreview] = useState<ResolvedTemplate | null>(null);
-  const [importedAt, setImportedAt] = useState<string | null>(null);
 
   const list = useQuery({
     queryKey: ["marketplace", indexUrl],
@@ -51,23 +51,27 @@ export function MarketplaceGallery({ projectPath, refreshSummary }: Props) {
   }, [list.data, filter]);
 
   const importTemplate = async (tpl: ResolvedTemplate) => {
-    const content = tpl.content || (await fetchTemplateContent(tpl.source));
-    if (tpl.type === "agent") {
-      const fileName = tpl.id.replace(/^builtin-/, "");
-      const target = `${projectPath}/.claude/agents/${fileName}.md`;
-      await writeTextFile(target, content);
-    } else if (tpl.type === "command") {
-      const fileName = tpl.id.replace(/^builtin-/, "");
-      const target = `${projectPath}/.claude/commands/${fileName}.md`;
-      await writeTextFile(target, content);
-    } else if (tpl.type === "claude-md") {
-      await writeTextFile(`${projectPath}/CLAUDE.md`, content);
+    try {
+      const content = tpl.content || (await fetchTemplateContent(tpl.source));
+      if (tpl.type === "agent") {
+        const fileName = tpl.id.replace(/^builtin-/, "");
+        const target = `${projectPath}/.claude/agents/${fileName}.md`;
+        await writeTextFile(target, content);
+      } else if (tpl.type === "command") {
+        const fileName = tpl.id.replace(/^builtin-/, "");
+        const target = `${projectPath}/.claude/commands/${fileName}.md`;
+        await writeTextFile(target, content);
+      } else if (tpl.type === "claude-md") {
+        await writeTextFile(`${projectPath}/CLAUDE.md`, content);
+      }
+      refreshSummary();
+      await qc.invalidateQueries({ queryKey: ["agents", projectPath] });
+      await qc.invalidateQueries({ queryKey: ["commands", projectPath] });
+      setPreview(null);
+      toast.success(t("marketplace.addToProject"), { description: tpl.name });
+    } catch (e) {
+      toast.error(t("marketplace.addToProject"), { description: String(e) });
     }
-    refreshSummary();
-    await qc.invalidateQueries({ queryKey: ["agents", projectPath] });
-    await qc.invalidateQueries({ queryKey: ["commands", projectPath] });
-    setImportedAt(tpl.id);
-    setPreview(null);
   };
 
   return (
@@ -114,7 +118,6 @@ export function MarketplaceGallery({ projectPath, refreshSummary }: Props) {
       <div className="grid grid-cols-1 gap-4 overflow-auto p-6 md:grid-cols-2 xl:grid-cols-3">
         {filtered.map((tpl) => {
           const Icon = TYPE_ICON[tpl.type];
-          const recentlyImported = importedAt === tpl.id;
           return (
             <Card key={tpl.id} className="flex flex-col">
               <CardHeader className="pb-2">
@@ -146,12 +149,9 @@ export function MarketplaceGallery({ projectPath, refreshSummary }: Props) {
                   <Button
                     size="sm"
                     onClick={() => void importTemplate(tpl)}
-                    disabled={recentlyImported}
                   >
                     <Download className="size-3" />
-                    {recentlyImported
-                      ? t("common.saved")
-                      : t("marketplace.addToProject")}
+                    {t("marketplace.addToProject")}
                   </Button>
                 </div>
               </CardContent>

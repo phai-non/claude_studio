@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { AlertTriangle, Bot, Loader2, Plus, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,7 +30,6 @@ export function AgentEditor({ projectPath, refreshSummary }: Props) {
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState<AgentDoc | null>(null);
   const [saving, setSaving] = useState(false);
-  const [savedAt, setSavedAt] = useState<number | null>(null);
 
   const agents = useQuery({
     queryKey: ["agents", projectPath],
@@ -53,18 +53,27 @@ export function AgentEditor({ projectPath, refreshSummary }: Props) {
       refreshSummary();
       setDraft(null);
       setSelected(doc.frontmatter.name);
-      setSavedAt(Date.now());
+      toast.success(t("common.saved"), {
+        description: doc.frontmatter.name,
+      });
+    } catch (e) {
+      toast.error(t("agent.save"), { description: String(e) });
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (name: string) => {
-    await deleteAgent(projectPath, name);
-    await qc.invalidateQueries({ queryKey: ["agents", projectPath] });
-    refreshSummary();
-    setSelected(null);
-    setDraft(null);
+    try {
+      await deleteAgent(projectPath, name);
+      await qc.invalidateQueries({ queryKey: ["agents", projectPath] });
+      refreshSummary();
+      setSelected(null);
+      setDraft(null);
+      toast.success(t("agent.delete"), { description: name });
+    } catch (e) {
+      toast.error(t("agent.delete"), { description: String(e) });
+    }
   };
 
   return (
@@ -163,33 +172,26 @@ export function AgentEditor({ projectPath, refreshSummary }: Props) {
             </CardContent>
           </Card>
         ) : (
-          <>
-            {savedAt && (
-              <div className="mb-3 inline-flex rounded-md bg-emerald-500/10 px-3 py-1 text-xs text-emerald-700 dark:text-emerald-400">
-                {t("common.saved")} ✓
-              </div>
-            )}
-            <AgentForm
-              key={current.filePath ?? "new"}
-              initial={current}
-              projectPath={projectPath}
-              isSaving={saving}
-              onSave={handleSave}
-              onCancel={
-                draft
-                  ? () => {
-                      setDraft(null);
-                      setSelected(agents.data?.[0]?.frontmatter.name ?? null);
-                    }
-                  : undefined
-              }
-              onDelete={
-                current.filePath
-                  ? () => handleDelete(current.frontmatter.name)
-                  : undefined
-              }
-            />
-          </>
+          <AgentForm
+            key={current.filePath ?? "new"}
+            initial={current}
+            projectPath={projectPath}
+            isSaving={saving}
+            onSave={handleSave}
+            onCancel={
+              draft
+                ? () => {
+                    setDraft(null);
+                    setSelected(agents.data?.[0]?.frontmatter.name ?? null);
+                  }
+                : undefined
+            }
+            onDelete={
+              current.filePath
+                ? () => handleDelete(current.frontmatter.name)
+                : undefined
+            }
+          />
         )}
       </div>
     </div>
