@@ -1,0 +1,10 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Bone 플레이트 (macOS가 둥근 모서리 마스킹). -->
+  <rect width="1024" height="1024" fill="#DDD3BF"/>
+
+  <!-- 마크: Paper 기준 비율 (96px plate / 68px svg)을 1024로 스케일. -->
+  <g transform="translate(152 152) scale(2.25)">
+    <path d="M 250 82 A 92 92 0 1 0 250 238" stroke="#3A3A38" stroke-width="42" fill="none"/>
+    <rect x="220" y="138" width="48" height="44" fill="#5C7C72"/>
+  </g>
+</svg>

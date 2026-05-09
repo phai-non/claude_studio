@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { FolderOpen, X, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Logo } from "@/components/brand/Logo";
 import { useProjectStore } from "@/store/project";
 import { isTauri, pickFolder } from "@/lib/tauri";
 import { ClaudeStatusBanner } from "@/features/claude-check/ClaudeStatusBanner";
@@ -39,11 +40,17 @@ export function WelcomeRoute() {
     <div className="flex h-full flex-col">
       <header className="flex items-center justify-between border-b px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <span className="font-bold">C</span>
+          <div
+            className="flex size-10 shrink-0 items-center justify-center rounded-md"
+            style={{
+              backgroundColor: "var(--brand-plate)",
+              color: "var(--brand-plate-foreground)",
+            }}
+          >
+            <Logo size={30} />
           </div>
           <div>
-            <h1 className="text-base font-semibold leading-none">
+            <h1 className="text-base font-semibold leading-none tracking-tight">
               {t("app.name")}
             </h1>
             <p className="text-xs text-muted-foreground">{t("app.tagline")}</p>

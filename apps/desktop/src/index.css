@@ -25,6 +25,14 @@
   --ring: oklch(0.708 0 0);
   --radius: 0.625rem;
 
+  /* Brand · Mineral Atelier (simplified mark) */
+  --brand-limestone: #eae3d5;
+  --brand-bone: #ddd3bf;
+  --brand-slate: #3a3a38;
+  --brand-copper: #5c7c72;
+  --brand-plate: var(--brand-bone);
+  --brand-plate-foreground: var(--brand-slate);
+
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -64,6 +72,11 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 0.1);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Brand · 다크 모드 — 코퍼는 verdigris, 플레이트는 슬레이트로 반전. */
+  --brand-copper: #a2b8a8;
+  --brand-plate: var(--brand-slate);
+  --brand-plate-foreground: var(--brand-bone);
 }
 
 @theme inline {

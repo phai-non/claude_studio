@@ -5,6 +5,10 @@ description = "Claude Studio - GUI for .claude project configuration"
 authors = ["Claude Studio contributors"]
 edition = "2021"
 
+[[bin]]
+name = "ClaudeStudio"
+path = "src/main.rs"
+
 [lib]
 name = "desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
