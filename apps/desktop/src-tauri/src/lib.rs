@@ -1,5 +1,6 @@
 mod commands;
 mod error;
+mod path_env;
 
 use commands::{
     check_app_update, check_claude, check_claude_latest, delete_file,
@@ -11,6 +12,10 @@ use commands::{
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // GUI 실행(Dock/Finder) 시 launchd가 주는 빈약한 PATH를 사용자 셸 PATH로 교체.
+    // 이후 spawn되는 모든 자식 프로세스가 같은 PATH를 상속한다.
+    path_env::fix_path_env();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())

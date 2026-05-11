@@ -17,8 +17,43 @@ const PROBE_TIMEOUT_SECS: u64 = 5;
 
 /// 사용자 환경에 `claude` CLI 가 설치돼 있는지 확인한다.
 /// `claude --version` 의 첫 줄을 버전으로 본다.
+///
+/// 1차로 PATH에서 직접 spawn, 실패 시 unix 환경에서는 사용자 로그인 셸을 통해 재시도.
+/// (macOS GUI 앱이 launchd 기본 PATH로 떴을 때 nvm/asdf 등 경로를 못 찾는 케이스 보호.)
 #[tauri::command]
 pub async fn check_claude() -> ClaudeStatus {
+    let first_err = match probe_direct().await {
+        Ok(version) => return ClaudeStatus::ok(version),
+        Err(e) => e,
+    };
+
+    #[cfg(unix)]
+    if let Ok(version) = probe_via_login_shell().await {
+        return ClaudeStatus::ok(version);
+    }
+
+    ClaudeStatus::fail(first_err)
+}
+
+impl ClaudeStatus {
+    fn ok(version: String) -> Self {
+        ClaudeStatus {
+            installed: true,
+            version: if version.is_empty() { None } else { Some(version) },
+            error: None,
+        }
+    }
+
+    fn fail(error: String) -> Self {
+        ClaudeStatus {
+            installed: false,
+            version: None,
+            error: Some(error),
+        }
+    }
+}
+
+async fn probe_direct() -> Result<String, String> {
     let mut cmd = tokio::process::Command::new("claude");
     cmd.arg("--version");
     cmd.kill_on_drop(true);
@@ -30,45 +65,40 @@ pub async fn check_claude() -> ClaudeStatus {
         cmd.env("HOME", home);
     }
 
-    let outcome = timeout(Duration::from_secs(PROBE_TIMEOUT_SECS), cmd.output()).await;
+    run_probe(cmd).await
+}
 
+#[cfg(unix)]
+async fn probe_via_login_shell() -> Result<String, String> {
+    let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string());
+    let mut cmd = tokio::process::Command::new(shell);
+    // `-lc` — 로그인 셸로 .zprofile/.bash_profile을 읽고 claude 실행.
+    cmd.args(["-lc", "claude --version"]);
+    cmd.kill_on_drop(true);
+
+    if let Ok(home) = std::env::var("HOME") {
+        cmd.env("HOME", home);
+    }
+
+    run_probe(cmd).await
+}
+
+async fn run_probe(mut cmd: tokio::process::Command) -> Result<String, String> {
+    let outcome = timeout(Duration::from_secs(PROBE_TIMEOUT_SECS), cmd.output()).await;
     match outcome {
-        Ok(Ok(out)) if out.status.success() => {
-            let version = String::from_utf8_lossy(&out.stdout)
-                .lines()
-                .next()
-                .unwrap_or("")
-                .trim()
-                .to_string();
-            ClaudeStatus {
-                installed: true,
-                version: if version.is_empty() {
-                    None
-                } else {
-                    Some(version)
-                },
-                error: None,
-            }
-        }
-        Ok(Ok(out)) => ClaudeStatus {
-            installed: false,
-            version: None,
-            error: Some(format!(
-                "claude --version exited with status {}: {}",
-                out.status,
-                String::from_utf8_lossy(&out.stderr).trim()
-            )),
-        },
-        Ok(Err(e)) => ClaudeStatus {
-            installed: false,
-            version: None,
-            error: Some(format!("spawn failed: {e}")),
-        },
-        Err(_) => ClaudeStatus {
-            installed: false,
-            version: None,
-            error: Some(format!("timeout after {PROBE_TIMEOUT_SECS}s")),
-        },
+        Ok(Ok(out)) if out.status.success() => Ok(String::from_utf8_lossy(&out.stdout)
+            .lines()
+            .next()
+            .unwrap_or("")
+            .trim()
+            .to_string()),
+        Ok(Ok(out)) => Err(format!(
+            "claude --version exited with status {}: {}",
+            out.status,
+            String::from_utf8_lossy(&out.stderr).trim()
+        )),
+        Ok(Err(e)) => Err(format!("spawn failed: {e}")),
+        Err(_) => Err(format!("timeout after {PROBE_TIMEOUT_SECS}s")),
     }
 }
 
