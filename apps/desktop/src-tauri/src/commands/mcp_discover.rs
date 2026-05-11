@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::time::Duration;
 
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue, ACCEPT, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -11,12 +12,17 @@ use crate::error::{AppError, AppResult};
 
 const HANDSHAKE_TIMEOUT_SECS: u64 = 30;
 const PROTOCOL_VERSION: &str = "2025-06-18";
+const CLIENT_NAME: &str = "claude-studio";
+const CLIENT_VERSION: &str = "0.0.1";
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ServerKind {
     Stdio,
+    /// Streamable HTTP transport (MCP 2025-03-26 spec, 권장)
     Http,
+    /// Legacy HTTP+SSE transport (MCP 2024-11 spec)
+    Sse,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -26,7 +32,7 @@ pub struct ConfiguredServer {
     pub origin: String,
     /// stdio 서버의 명령(요약)
     pub command_preview: Option<String>,
-    /// http 서버의 url
+    /// http/sse 서버의 url
     pub url: Option<String>,
 }
 
@@ -118,13 +124,12 @@ fn collect_all_configs(project_path: Option<&str>) -> Vec<StoredConfig> {
 }
 
 fn detect_kind(raw: &Value) -> Option<ServerKind> {
-    if raw
-        .get("type")
-        .and_then(|v| v.as_str())
-        .map(|s| s == "http" || s == "sse")
-        .unwrap_or(false)
-    {
-        return Some(ServerKind::Http);
+    if let Some(t) = raw.get("type").and_then(|v| v.as_str()) {
+        match t {
+            "http" => return Some(ServerKind::Http),
+            "sse" => return Some(ServerKind::Sse),
+            _ => {}
+        }
     }
     if raw.get("command").and_then(|v| v.as_str()).is_some() {
         return Some(ServerKind::Stdio);
@@ -158,7 +163,7 @@ pub fn list_mcp_servers(project_path: Option<String>) -> AppResult<Vec<Configure
                 };
                 (Some(preview), None)
             }
-            ServerKind::Http => (
+            ServerKind::Http | ServerKind::Sse => (
                 None,
                 c.raw
                     .get("url")
@@ -194,9 +199,8 @@ pub async fn discover_mcp_tools(
 
     let outcome = match kind {
         ServerKind::Stdio => introspect_stdio(&target.raw).await,
-        ServerKind::Http => Err(AppError::Other(
-            "HTTP MCP introspection은 v1.1에 지원 예정입니다".into(),
-        )),
+        ServerKind::Http => introspect_http(&target.raw).await,
+        ServerKind::Sse => introspect_sse(&target.raw).await,
     };
 
     Ok(match outcome {
@@ -212,6 +216,60 @@ pub async fn discover_mcp_tools(
         },
     })
 }
+
+// ---------- 공통 헬퍼 ----------
+
+fn init_params() -> Value {
+    json!({
+        "protocolVersion": PROTOCOL_VERSION,
+        "capabilities": {},
+        "clientInfo": { "name": CLIENT_NAME, "version": CLIENT_VERSION }
+    })
+}
+
+fn parse_tools(response: &Value) -> AppResult<Vec<McpTool>> {
+    let arr = response
+        .get("result")
+        .and_then(|r| r.get("tools"))
+        .and_then(|t| t.as_array())
+        .ok_or_else(|| AppError::Other("no tools[] in response".into()))?;
+    Ok(arr
+        .iter()
+        .filter_map(|t| serde_json::from_value(t.clone()).ok())
+        .collect())
+}
+
+fn read_headers(raw: &Value) -> HashMap<String, String> {
+    raw.get("headers")
+        .and_then(|v| v.as_object())
+        .map(|m| {
+            m.iter()
+                .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn merge_user_headers(headers: &mut HeaderMap, user: &HashMap<String, String>) {
+    for (k, v) in user {
+        let Ok(name) = HeaderName::from_bytes(k.as_bytes()) else { continue };
+        let Ok(val) = HeaderValue::from_str(v) else { continue };
+        headers.insert(name, val);
+    }
+}
+
+fn http_error_to_app_error(status: reqwest::StatusCode, body: &str) -> AppError {
+    if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
+        return AppError::Other(format!(
+            "인증 실패 ({}): headers.Authorization 확인",
+            status.as_u16()
+        ));
+    }
+    let snippet: String = body.chars().take(200).collect();
+    AppError::Other(format!("서버 응답 {}: {snippet}", status.as_u16()))
+}
+
+// ---------- stdio ----------
 
 async fn introspect_stdio(raw: &Value) -> AppResult<Vec<McpTool>> {
     let command = raw
@@ -272,11 +330,7 @@ async fn introspect_stdio(raw: &Value) -> AppResult<Vec<McpTool>> {
             "jsonrpc": "2.0",
             "id": 1,
             "method": "initialize",
-            "params": {
-                "protocolVersion": PROTOCOL_VERSION,
-                "capabilities": {},
-                "clientInfo": { "name": "claude-studio", "version": "0.0.1" }
-            }
+            "params": init_params(),
         });
         send_line(&mut stdin, &init).await?;
         let _init_resp = read_response(&mut reader, 1).await?;
@@ -284,7 +338,7 @@ async fn introspect_stdio(raw: &Value) -> AppResult<Vec<McpTool>> {
         // 2) initialized notification
         let initialized = json!({
             "jsonrpc": "2.0",
-            "method": "notifications/initialized"
+            "method": "notifications/initialized",
         });
         send_line(&mut stdin, &initialized).await?;
 
@@ -293,23 +347,12 @@ async fn introspect_stdio(raw: &Value) -> AppResult<Vec<McpTool>> {
             "jsonrpc": "2.0",
             "id": 2,
             "method": "tools/list",
-            "params": {}
+            "params": {},
         });
         send_line(&mut stdin, &list).await?;
         let list_resp = read_response(&mut reader, 2).await?;
 
-        let tools_array = list_resp
-            .get("result")
-            .and_then(|r| r.get("tools"))
-            .and_then(|t| t.as_array())
-            .ok_or_else(|| AppError::Other("no tools[] in response".into()))?;
-
-        let tools: Vec<McpTool> = tools_array
-            .iter()
-            .filter_map(|t| serde_json::from_value(t.clone()).ok())
-            .collect();
-
-        Ok::<_, AppError>(tools)
+        parse_tools(&list_resp)
     };
 
     let result = timeout(Duration::from_secs(HANDSHAKE_TIMEOUT_SECS), work).await;
@@ -365,5 +408,387 @@ where
             return Ok(value);
         }
         // 알림/다른 응답은 무시
+    }
+}
+
+// ---------- Streamable HTTP transport (2025-03-26) ----------
+
+async fn introspect_http(raw: &Value) -> AppResult<Vec<McpTool>> {
+    let url = raw
+        .get("url")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Other("missing url".into()))?
+        .to_string();
+    let user_headers = read_headers(raw);
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(HANDSHAKE_TIMEOUT_SECS))
+        .build()
+        .map_err(|e| AppError::Other(format!("http client: {e}")))?;
+
+    let work = async {
+        let mut session = StreamableSession::new(client, url, user_headers);
+
+        let init_req = json!({
+            "jsonrpc": "2.0", "id": 1, "method": "initialize", "params": init_params()
+        });
+        let _init = session.send_request(&init_req, 1).await?;
+
+        let notif = json!({
+            "jsonrpc": "2.0", "method": "notifications/initialized"
+        });
+        session.send_notification(&notif).await?;
+
+        let list = json!({
+            "jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}
+        });
+        let list_resp = session.send_request(&list, 2).await?;
+        parse_tools(&list_resp)
+    };
+
+    timeout(Duration::from_secs(HANDSHAKE_TIMEOUT_SECS), work)
+        .await
+        .map_err(|_| AppError::Other(format!("MCP handshake timeout ({HANDSHAKE_TIMEOUT_SECS}s)")))?
+}
+
+struct StreamableSession {
+    client: reqwest::Client,
+    url: String,
+    user_headers: HashMap<String, String>,
+    session_id: Option<String>,
+}
+
+impl StreamableSession {
+    fn new(
+        client: reqwest::Client,
+        url: String,
+        user_headers: HashMap<String, String>,
+    ) -> Self {
+        Self {
+            client,
+            url,
+            user_headers,
+            session_id: None,
+        }
+    }
+
+    fn build_headers(&self) -> HeaderMap {
+        let mut h = HeaderMap::new();
+        h.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+        h.insert(
+            ACCEPT,
+            HeaderValue::from_static("application/json, text/event-stream"),
+        );
+        if let Some(sid) = self.session_id.as_deref() {
+            if let Ok(v) = HeaderValue::from_str(sid) {
+                if let Ok(name) = HeaderName::from_bytes(b"mcp-session-id") {
+                    h.insert(name, v);
+                }
+            }
+        }
+        merge_user_headers(&mut h, &self.user_headers);
+        h
+    }
+
+    async fn send_request(&mut self, payload: &Value, id: i64) -> AppResult<Value> {
+        let headers = self.build_headers();
+        let resp = self
+            .client
+            .post(&self.url)
+            .headers(headers)
+            .json(payload)
+            .send()
+            .await
+            .map_err(|e| AppError::Other(format!("서버에 연결할 수 없습니다: {e}")))?;
+
+        let status = resp.status();
+
+        // Mcp-Session-Id 캡처 (서버가 발급하면 후속 요청에 echo)
+        if let Some(sid) = resp
+            .headers()
+            .get("mcp-session-id")
+            .and_then(|h| h.to_str().ok())
+            .map(String::from)
+        {
+            self.session_id = Some(sid);
+        }
+
+        let content_type = resp
+            .headers()
+            .get(CONTENT_TYPE)
+            .and_then(|h| h.to_str().ok())
+            .unwrap_or("")
+            .to_string();
+
+        if !status.is_success() {
+            let body = resp.text().await.unwrap_or_default();
+            return Err(http_error_to_app_error(status, &body));
+        }
+
+        if content_type.starts_with("text/event-stream") {
+            read_sse_for_id(resp, id).await
+        } else {
+            let value: Value = resp
+                .json()
+                .await
+                .map_err(|e| AppError::Other(format!("json parse: {e}")))?;
+            Ok(value)
+        }
+    }
+
+    async fn send_notification(&self, payload: &Value) -> AppResult<()> {
+        let headers = self.build_headers();
+        let _ = self
+            .client
+            .post(&self.url)
+            .headers(headers)
+            .json(payload)
+            .send()
+            .await
+            .map_err(|e| AppError::Other(format!("notify: {e}")))?;
+        Ok(())
+    }
+}
+
+/// SSE 응답 스트림에서 id가 일치하는 메시지 1개를 찾아 반환한다.
+async fn read_sse_for_id(mut resp: reqwest::Response, target_id: i64) -> AppResult<Value> {
+    let mut parser = SseParser::default();
+    loop {
+        let chunk = match resp
+            .chunk()
+            .await
+            .map_err(|e| AppError::Other(format!("stream: {e}")))?
+        {
+            Some(c) => c,
+            None => return Err(AppError::Other("EOF before response".into())),
+        };
+        for msg in parser.feed(&chunk) {
+            if let Ok(value) = serde_json::from_str::<Value>(&msg.data) {
+                if value.get("id").and_then(|v| v.as_i64()) == Some(target_id) {
+                    return Ok(value);
+                }
+            }
+        }
+    }
+}
+
+// ---------- Legacy HTTP+SSE transport (2024-11) ----------
+
+async fn introspect_sse(raw: &Value) -> AppResult<Vec<McpTool>> {
+    let url = raw
+        .get("url")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Other("missing url".into()))?
+        .to_string();
+    let user_headers = read_headers(raw);
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(HANDSHAKE_TIMEOUT_SECS))
+        .build()
+        .map_err(|e| AppError::Other(format!("http client: {e}")))?;
+
+    let work = legacy_sse_handshake(client, url, user_headers);
+    timeout(Duration::from_secs(HANDSHAKE_TIMEOUT_SECS), work)
+        .await
+        .map_err(|_| AppError::Other(format!("MCP handshake timeout ({HANDSHAKE_TIMEOUT_SECS}s)")))?
+}
+
+async fn legacy_sse_handshake(
+    client: reqwest::Client,
+    base_url: String,
+    user_headers: HashMap<String, String>,
+) -> AppResult<Vec<McpTool>> {
+    // 1) GET <url> 로 SSE 스트림 연결.
+    let mut get_headers = HeaderMap::new();
+    get_headers.insert(ACCEPT, HeaderValue::from_static("text/event-stream"));
+    merge_user_headers(&mut get_headers, &user_headers);
+
+    let resp = client
+        .get(&base_url)
+        .headers(get_headers)
+        .send()
+        .await
+        .map_err(|e| AppError::Other(format!("서버에 연결할 수 없습니다: {e}")))?;
+
+    let status = resp.status();
+    if !status.is_success() {
+        let body = resp.text().await.unwrap_or_default();
+        return Err(http_error_to_app_error(status, &body));
+    }
+
+    // 2) endpoint 이벤트를 받을 때까지 스트림을 읽어 message_url을 확보한다.
+    let (mut parser, mut resp, message_url) = wait_for_endpoint(SseParser::default(), resp, &base_url).await?;
+
+    // 3) 이후 SSE 메시지를 mpsc로 흘려보내는 백그라운드 태스크 시작.
+    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<Value>();
+    let stream_task = tokio::spawn(async move {
+        loop {
+            let chunk = match resp.chunk().await {
+                Ok(Some(c)) => c,
+                _ => return,
+            };
+            for msg in parser.feed(&chunk) {
+                if let Ok(value) = serde_json::from_str::<Value>(&msg.data) {
+                    if tx.send(value).is_err() {
+                        return;
+                    }
+                }
+            }
+        }
+    });
+
+    let result = run_legacy_rpc(&client, &message_url, &user_headers, &mut rx).await;
+    stream_task.abort();
+    result
+}
+
+async fn run_legacy_rpc(
+    client: &reqwest::Client,
+    message_url: &str,
+    user_headers: &HashMap<String, String>,
+    rx: &mut tokio::sync::mpsc::UnboundedReceiver<Value>,
+) -> AppResult<Vec<McpTool>> {
+    // POST 헤더 — Content-Type만 강제, 나머지는 사용자 설정 그대로.
+    let mut post_headers = HeaderMap::new();
+    post_headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+    merge_user_headers(&mut post_headers, user_headers);
+
+    let post = |payload: Value| {
+        let client = client.clone();
+        let url = message_url.to_string();
+        let headers = post_headers.clone();
+        async move {
+            let resp = client
+                .post(&url)
+                .headers(headers)
+                .json(&payload)
+                .send()
+                .await
+                .map_err(|e| AppError::Other(format!("post: {e}")))?;
+            let status = resp.status();
+            if !status.is_success() {
+                let body = resp.text().await.unwrap_or_default();
+                return Err(http_error_to_app_error(status, &body));
+            }
+            Ok::<_, AppError>(())
+        }
+    };
+
+    post(json!({
+        "jsonrpc": "2.0", "id": 1, "method": "initialize", "params": init_params()
+    }))
+    .await?;
+    let _init = wait_for_id(rx, 1).await?;
+
+    post(json!({
+        "jsonrpc": "2.0", "method": "notifications/initialized"
+    }))
+    .await?;
+
+    post(json!({
+        "jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}
+    }))
+    .await?;
+    let list_resp = wait_for_id(rx, 2).await?;
+
+    parse_tools(&list_resp)
+}
+
+async fn wait_for_endpoint(
+    mut parser: SseParser,
+    mut resp: reqwest::Response,
+    base_url: &str,
+) -> AppResult<(SseParser, reqwest::Response, String)> {
+    loop {
+        let chunk = resp
+            .chunk()
+            .await
+            .map_err(|e| AppError::Other(format!("stream: {e}")))?
+            .ok_or_else(|| AppError::Other("EOF before endpoint event".into()))?;
+        for msg in parser.feed(&chunk) {
+            if msg.event.as_deref() == Some("endpoint") && !msg.data.is_empty() {
+                let resolved = resolve_url(base_url, &msg.data);
+                return Ok((parser, resp, resolved));
+            }
+        }
+    }
+}
+
+async fn wait_for_id(
+    rx: &mut tokio::sync::mpsc::UnboundedReceiver<Value>,
+    id: i64,
+) -> AppResult<Value> {
+    while let Some(value) = rx.recv().await {
+        if value.get("id").and_then(|v| v.as_i64()) == Some(id) {
+            return Ok(value);
+        }
+    }
+    Err(AppError::Other("SSE stream closed before response".into()))
+}
+
+fn resolve_url(base: &str, relative: &str) -> String {
+    if relative.starts_with("http://") || relative.starts_with("https://") {
+        return relative.to_string();
+    }
+    if let Ok(base_url) = reqwest::Url::parse(base) {
+        if let Ok(joined) = base_url.join(relative) {
+            return joined.to_string();
+        }
+    }
+    relative.to_string()
+}
+
+// ---------- 간단한 SSE 파서 ----------
+
+#[derive(Default)]
+struct SseParser {
+    buf: Vec<u8>,
+    current_event: Option<String>,
+    current_data: String,
+}
+
+struct SseMessage {
+    event: Option<String>,
+    data: String,
+}
+
+impl SseParser {
+    /// 바이트 청크를 누적하고 완성된 메시지들을 반환한다.
+    fn feed(&mut self, chunk: &[u8]) -> Vec<SseMessage> {
+        self.buf.extend_from_slice(chunk);
+        let mut out = Vec::new();
+        while let Some(pos) = self.buf.iter().position(|&b| b == b'\n') {
+            let line_bytes: Vec<u8> = self.buf.drain(..=pos).collect();
+            // 후행 \n과 가능한 \r 제거
+            let mut len = line_bytes.len() - 1;
+            if len > 0 && line_bytes[len - 1] == b'\r' {
+                len -= 1;
+            }
+            let line = String::from_utf8_lossy(&line_bytes[..len]).to_string();
+
+            if line.is_empty() {
+                if !self.current_data.is_empty() {
+                    out.push(SseMessage {
+                        event: self.current_event.take(),
+                        data: std::mem::take(&mut self.current_data),
+                    });
+                }
+                self.current_event = None;
+                self.current_data.clear();
+                continue;
+            }
+
+            if let Some(v) = line.strip_prefix("event:") {
+                self.current_event = Some(v.trim().to_string());
+            } else if let Some(v) = line.strip_prefix("data:") {
+                let v = v.strip_prefix(' ').unwrap_or(v);
+                if !self.current_data.is_empty() {
+                    self.current_data.push('\n');
+                }
+                self.current_data.push_str(v);
+            }
+            // id:, retry:, 주석(:) 등 다른 SSE 필드는 무시
+        }
+        out
     }
 }

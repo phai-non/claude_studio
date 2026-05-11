@@ -34,7 +34,7 @@ export function McpServerGroup({ server, projectPath, onPick }: Props) {
 
   const toggle = () => {
     setExpanded((v) => !v);
-    if (!autoDiscover && server.kind === "stdio") setAutoDiscover(true);
+    if (!autoDiscover) setAutoDiscover(true);
   };
 
   return (
@@ -80,6 +80,7 @@ export function McpServerGroup({ server, projectPath, onPick }: Props) {
               + {wildcard}
             </Badge>
             <Button
+              type="button"
               size="sm"
               variant="ghost"
               className="h-6 px-2 text-[11px]"
@@ -87,15 +88,10 @@ export function McpServerGroup({ server, projectPath, onPick }: Props) {
                 setAutoDiscover(true);
                 void query.refetch();
               }}
-              disabled={server.kind !== "stdio"}
-              title={
-                server.kind !== "stdio"
-                  ? "HTTP 서버 introspection은 v1.1"
-                  : "이 서버를 spawn해서 tools/list 호출"
-              }
+              title="이 서버에서 tools/list 호출"
             >
               <Search className="size-3" />
-              {tools.length > 0 || error ? "다시" : "툴 조회"}
+              {tools.length > 0 || error ? "툴 다시 조회" : "툴 조회"}
             </Button>
           </div>
 

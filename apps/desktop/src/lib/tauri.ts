@@ -81,7 +81,7 @@ export async function readToolHints(
   return await invoke<ToolHints>("read_tool_hints", { projectPath });
 }
 
-export type ServerKind = "stdio" | "http";
+export type ServerKind = "stdio" | "http" | "sse";
 
 export interface ConfiguredMcpServer {
   name: string;
