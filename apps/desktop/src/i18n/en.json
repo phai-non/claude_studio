@@ -16,6 +16,7 @@
       "agents": "Agents",
       "commands": "Commands",
       "claudeMd": "CLAUDE.md",
+      "hooks": "Hooks",
       "marketplace": "Marketplace",
       "terminal": "Terminal"
     },
@@ -71,6 +72,38 @@
     "title": "Embedded Terminal",
     "starting": "Starting claude…",
     "noBinary": "Could not find the claude CLI. Install it and try again."
+  },
+  "hooks": {
+    "title": "Hooks",
+    "save": "Save",
+    "reset": "Reload from disk",
+    "saved": "Hooks saved",
+    "saveFailed": "Failed to save hooks",
+    "parseError": "Could not parse settings.json. Fix it in a text editor first.",
+    "matcher": "matcher (regex or tool name)",
+    "matcherPlaceholder": "e.g. Bash, Edit|Write, .*",
+    "commands": "Commands",
+    "commandPlaceholder": "e.g. jq -r .tool_input.command",
+    "addEntry": "Add entry",
+    "removeEntry": "Remove entry",
+    "addCommand": "Add command",
+    "removeCommand": "Remove command",
+    "entryCount": "{{count}} entries total",
+    "scope": {
+      "project": "Project",
+      "user": "User global"
+    },
+    "events": {
+      "PreToolUse": "Before tool use",
+      "PostToolUse": "After tool use",
+      "UserPromptSubmit": "On user prompt",
+      "Notification": "On notification",
+      "Stop": "On response complete",
+      "SubagentStop": "On subagent complete",
+      "PreCompact": "Before context compact",
+      "SessionStart": "On session start",
+      "SessionEnd": "On session end"
+    }
   },
   "settings": {
     "title": "Settings",

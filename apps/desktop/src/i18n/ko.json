@@ -16,6 +16,7 @@
       "agents": "Agents",
       "commands": "Commands",
       "claudeMd": "CLAUDE.md",
+      "hooks": "Hooks",
       "marketplace": "Marketplace",
       "terminal": "Terminal"
     },
@@ -71,6 +72,38 @@
     "title": "내장 터미널",
     "starting": "claude 시작 중…",
     "noBinary": "claude CLI를 찾을 수 없습니다. 설치 후 다시 시도하세요."
+  },
+  "hooks": {
+    "title": "Hooks",
+    "save": "저장",
+    "reset": "디스크에서 다시 로드",
+    "saved": "Hooks 저장됨",
+    "saveFailed": "Hooks 저장 실패",
+    "parseError": "settings.json을 파싱할 수 없습니다. 텍스트 에디터로 먼저 고쳐주세요.",
+    "matcher": "matcher (정규식 또는 도구 이름)",
+    "matcherPlaceholder": "예: Bash, Edit|Write, .*",
+    "commands": "실행 명령",
+    "commandPlaceholder": "예: jq -r .tool_input.command",
+    "addEntry": "항목 추가",
+    "removeEntry": "이 항목 삭제",
+    "addCommand": "명령 추가",
+    "removeCommand": "명령 삭제",
+    "entryCount": "총 {{count}}개 항목",
+    "scope": {
+      "project": "프로젝트",
+      "user": "사용자 글로벌"
+    },
+    "events": {
+      "PreToolUse": "도구 실행 직전",
+      "PostToolUse": "도구 실행 직후",
+      "UserPromptSubmit": "사용자 프롬프트 제출 시",
+      "Notification": "알림 발생 시",
+      "Stop": "응답 완료 시",
+      "SubagentStop": "서브 agent 완료 시",
+      "PreCompact": "컨텍스트 압축 직전",
+      "SessionStart": "세션 시작 시",
+      "SessionEnd": "세션 종료 시"
+    }
   },
   "settings": {
     "title": "설정",

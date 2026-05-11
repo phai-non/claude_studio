@@ -8,7 +8,7 @@ import {
   useParams,
 } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bot, FileText, ScrollText, Store, Terminal } from "lucide-react";
+import { Bot, FileText, ScrollText, Store, Terminal, Webhook } from "lucide-react";
 import { useProjectStore } from "@/store/project";
 import { cn } from "@/lib/utils";
 import {
@@ -62,6 +62,7 @@ export function WorkspaceRoute() {
       count: summary.data?.commands.length,
     },
     { to: "claude-md", icon: FileText, label: t("workspace.tabs.claudeMd") },
+    { to: "hooks", icon: Webhook, label: t("workspace.tabs.hooks") },
     { to: "marketplace", icon: Store, label: t("workspace.tabs.marketplace") },
     { to: "terminal", icon: Terminal, label: t("workspace.tabs.terminal") },
   ];
@@ -97,6 +98,7 @@ export function WorkspaceRoute() {
                     void qc.invalidateQueries({
                       queryKey: ["claude-md", path],
                     });
+                    void qc.invalidateQueries({ queryKey: ["hooks"] });
                     void qc.invalidateQueries({ queryKey: ["marketplace"] });
                     void qc.invalidateQueries({ queryKey: ["mcp-servers"] });
                   } else {

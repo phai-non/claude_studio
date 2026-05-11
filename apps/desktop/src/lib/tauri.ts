@@ -179,6 +179,42 @@ export async function checkAppUpdate(
  * 0 = 동일
  * 음수 = current가 더 높음 (preview/local build 가능성)
  */
+export type SettingsScope = "project" | "user";
+
+export async function readSettingsFile(
+  scope: SettingsScope,
+  projectPath?: string,
+): Promise<string> {
+  if (!isTauri()) return "";
+  return await invoke<string>("read_settings_file", {
+    scope,
+    projectPath,
+  });
+}
+
+export async function writeSettingsFile(
+  scope: SettingsScope,
+  contents: string,
+  projectPath?: string,
+): Promise<void> {
+  await invoke<void>("write_settings_file", {
+    scope,
+    projectPath,
+    contents,
+  });
+}
+
+export async function settingsFilePath(
+  scope: SettingsScope,
+  projectPath?: string,
+): Promise<string> {
+  if (!isTauri()) return "";
+  return await invoke<string>("settings_file_path", {
+    scope,
+    projectPath,
+  });
+}
+
 export function compareDottedVersion(current: string, latest: string): number {
   const norm = (v: string) =>
     v
