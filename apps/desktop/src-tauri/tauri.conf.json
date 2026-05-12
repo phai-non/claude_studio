@@ -37,7 +37,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "REPLACE_WITH_PUBLIC_KEY_FROM_~/.tauri/claude-studio.key.pub",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEUzNzJBQkUyN0QwM0Q4ODIKUldTQzJBTjk0cXR5NHhoZkxQTE1rRnRNYTd0TDB3YWZWei83eGNtL1RCSm9aeWk0aUUxV3RVUGUK",
       "endpoints": [
         "https://github.com/UkiDelly/claude_studio/releases/latest/download/latest.json"
       ]
