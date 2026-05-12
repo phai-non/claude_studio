@@ -59,12 +59,8 @@ jobs:
       - name: Install JS deps
         run: bun install --frozen-lockfile
 
-      - name: Run tests
-        run: bun run test
-
-      - name: Type check
-        working-directory: apps/desktop
-        run: bunx tsc --noEmit
+      # 정적 게이트(test/tsc/clippy)는 ci.yml에서 main push/PR 시 검증함.
+      # release는 tag push 시점이라 이미 통과된 commit이라고 가정.
 
       - name: Build + sign + publish (tauri-action)
         uses: tauri-apps/tauri-action@v0
