@@ -16,3 +16,7 @@ apps/desktop/src-tauri/gen/
 
 # Test artifacts
 coverage/
+
+# Tauri signing keys (절대 커밋 금지)
+*.key
+*.key.pub

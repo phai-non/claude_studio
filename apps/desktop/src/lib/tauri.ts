@@ -143,36 +143,6 @@ export async function checkClaudeLatest(): Promise<LatestVersionInfo> {
   return await invoke<LatestVersionInfo>("check_claude_latest");
 }
 
-export interface LatestReleaseInfo {
-  tag_name: string;
-  name?: string;
-  body?: string;
-  html_url: string;
-  published_at?: string;
-  draft: boolean;
-  prerelease: boolean;
-}
-
-/**
- * GitHub Releases API에서 owner/repo의 최신 release를 조회한다.
- * 404(release 없음/repo 없음)는 null로 매핑. 그 외 오류는 throw.
- */
-export async function checkAppUpdate(
-  ownerRepo: string,
-): Promise<LatestReleaseInfo | null> {
-  const cleaned = ownerRepo.trim().replace(/^https?:\/\/github\.com\//, "");
-  const slash = cleaned.indexOf("/");
-  if (slash <= 0 || slash === cleaned.length - 1) {
-    throw new Error(`invalid owner/repo: ${ownerRepo}`);
-  }
-  const owner = cleaned.slice(0, slash);
-  const repo = cleaned.slice(slash + 1).replace(/\/$/, "");
-  return await invoke<LatestReleaseInfo | null>("check_app_update", {
-    owner,
-    repo,
-  });
-}
-
 /**
  * 단순 점-구분 정수 비교 (semver 가벼운 버전).
  * 양수 = current가 더 낮음 (업데이트 필요)

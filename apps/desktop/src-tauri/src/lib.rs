@@ -3,12 +3,12 @@ mod error;
 mod path_env;
 
 use commands::{
-    check_app_update, check_claude, check_claude_latest, delete_file,
-    discover_mcp_tools, ensure_claude_dir, fetch_text, list_agents,
-    list_commands, list_mcp_servers, pick_folder, pty_close, pty_open,
-    pty_resize, pty_write, read_project_summary, read_settings_file,
-    read_text_file, read_tool_hints, rename_file, settings_file_path,
-    write_settings_file, write_text_file,
+    check_claude, check_claude_latest, delete_file, discover_mcp_tools,
+    ensure_claude_dir, fetch_text, list_agents, list_commands,
+    list_mcp_servers, pick_folder, pty_close, pty_open, pty_resize,
+    pty_write, read_project_summary, read_settings_file, read_text_file,
+    read_tool_hints, rename_file, settings_file_path, write_settings_file,
+    write_text_file,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -23,6 +23,8 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .invoke_handler(tauri::generate_handler![
             pick_folder,
             read_project_summary,
@@ -43,7 +45,6 @@ pub fn run() {
             discover_mcp_tools,
             check_claude,
             check_claude_latest,
-            check_app_update,
             read_settings_file,
             write_settings_file,
             settings_file_path,

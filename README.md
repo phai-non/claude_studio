@@ -149,16 +149,21 @@ Agent 편집기 우측 패널의 **MCP servers** 섹션에서 각 서버를 펼�
 2. stdio 서버는 명령(`uvx ...`, `npx ...` 등)을 spawn하고, JSON-RPC 2.0 으로 `initialize` → `notifications/initialized` → `tools/list` 핸드셰이크.
 3. 응답에서 받은 `tools[]` 를 30분 캐시(TanStack Query) 후 클릭 한 번에 `mcp__<server>__<tool>` 형태로 CSV 에 추가.
 
-> HTTP / SSE 기반 MCP 서버는 v1.1 에서 지원 예정 (세션·SSE 처리 추가 필요).
-
 ## 로드맵
 
-### v1.1 (계획)
+### v1.0 (현재 — 릴리즈 준비)
 
-- **Hooks / settings.json / MCP 편집기** — `.claude/settings.json` 의 PreToolUse/PostToolUse 훅, permissions, env, MCP 등 직접 편집
-- **HTTP / SSE MCP 서버 introspection** — 현재는 stdio만
-- **플러그인 디스커버리** — `~/.claude/plugins/` 에서 동적으로 등록되는 MCP 서버까지 잡기
-- **자동 업데이트** — `tauri-plugin-updater` + 코드 서명 키페어, CI에서 빌드 서명, `latest.json` 호스팅. 클릭 한 번으로 다운로드+재시작 (현재는 release 페이지 안내만)
+- ✅ **Hooks 편집기** — `.claude/settings.json`의 9개 hook event를 GUI로. 프로젝트·사용자 글로벌 두 scope.
+- ✅ **HTTP / SSE MCP 서버 introspection** — Streamable HTTP(2025-03-26) + Legacy HTTP+SSE(2024-11) 둘 다. 인증 헤더 포함.
+- ✅ **자동 업데이트** — `tauri-plugin-updater`(ed25519 서명) + GitHub Releases 정적 `latest.json` endpoint. 클릭 한 번 다운로드+재시작. 셋업 가이드: [docs/release.md](./docs/release.md).
+
+### v1.1+ (계획)
+
+- **macOS Apple Developer ID 서명 + notarization** — Gatekeeper 경고 제거. 자동 업데이트 ed25519 서명과 독립.
+- **Windows Authenticode 서명** — SmartScreen 경고 제거.
+- **settings.json mcpServers 편집기** — 현재는 agent 편집기에서 읽기만 가능, GUI 추가 가능하게.
+- **플러그인 디스커버리** — `~/.claude/plugins/` 에서 동적으로 등록되는 MCP 서버까지 잡기 (사용자 글로벌 영역이라 우선순위 낮음).
+- **자동 업데이트 알림 주기·설정 UI**.
 
 ### v1.2+ (가능성)
 

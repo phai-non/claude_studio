@@ -7,22 +7,24 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  publish-tauri:
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
         include:
           - platform: macos-latest
-            target: aarch64-apple-darwin
+            args: --target aarch64-apple-darwin
             name: macos-arm64
           - platform: macos-latest
-            target: x86_64-apple-darwin
+            args: --target x86_64-apple-darwin
             name: macos-x64
           - platform: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
+            args: ""
             name: linux-x64
           - platform: windows-latest
-            target: x86_64-pc-windows-msvc
+            args: ""
             name: windows-x64
     runs-on: ${{ matrix.platform }}
     steps:
@@ -36,7 +38,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
@@ -64,29 +66,27 @@ jobs:
         working-directory: apps/desktop
         run: bunx tsc --noEmit
 
-      - name: Build Tauri app
-        working-directory: apps/desktop
-        run: bun tauri build --target ${{ matrix.target }}
+      - name: Build + sign + publish (tauri-action)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: apps/desktop
+          tagName: ${{ github.ref_name }}
+          releaseName: "Claude Studio __VERSION__"
+          releaseBody: |
+            보세요 — release notes는 머지된 PR 요약으로 채워주세요.
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: claude-studio-${{ matrix.name }}
-          path: |
-            apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**
-          if-no-files-found: error
+            ## 다운로드
+            - macOS (Apple Silicon): `.app.tar.gz`
+            - macOS (Intel): `.app.tar.gz`
+            - Windows: `.msi` 또는 `.exe`
+            - Linux: `.AppImage` 또는 `.deb`
 
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: artifacts/**/*
-          generate_release_notes: true
+            자동 업데이트는 publish 후 `latest.json`이 자산으로 올라가야 동작합니다.
+          releaseDraft: true
+          prerelease: false
+          includeUpdaterJson: true
+          args: ${{ matrix.args }}

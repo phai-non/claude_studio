@@ -138,11 +138,14 @@
   },
   "appUpdate": {
     "current": "Current v{{version}}",
-    "checking": "Checking GitHub Releases…",
+    "checking": "Checking for updates…",
     "upToDate": "You're on the latest version",
-    "available": "v{{tag}} is available",
-    "openRelease": "Open release page",
-    "fetchError": "Update check failed",
-    "noReleasesYet": "No releases yet"
+    "available": "{{tag}} is available",
+    "installNow": "Install now",
+    "installing": "Installing update…",
+    "installed": "Update installed",
+    "installFailed": "Update install failed",
+    "relaunching": "Relaunching…",
+    "fetchError": "Update check failed"
   }
 }
