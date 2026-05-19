@@ -4,8 +4,10 @@
 //! 사용자의 로그인 셸을 잠깐 띄워서 그 PATH를 가져온 뒤 `std::env::set_var`로 박는다.
 //! 이후 spawn되는 모든 자식 프로세스(`check_claude`, pty 등)가 같은 PATH를 상속한다.
 
+#[cfg(target_os = "macos")]
 use std::time::Duration;
 
+#[cfg(target_os = "macos")]
 const SHELL_TIMEOUT_SECS: u64 = 3;
 
 /// 사용자 셸의 PATH로 process-global PATH를 갱신한다. dev 모드(터미널에서 띄운 경우)는 no-op.
