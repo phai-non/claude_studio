@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Logo } from "@/components/brand/Logo";
 import { useProjectStore } from "@/store/project";
 import { isTauri, pickFolder } from "@/lib/tauri";
+import { projectBasename } from "@/lib/path";
 import { ClaudeStatusBanner } from "@/features/claude-check/ClaudeStatusBanner";
 import { AppUpdateBanner } from "@/features/app-update/AppUpdateBanner";
 
@@ -18,22 +19,22 @@ export function WelcomeRoute() {
     if (!isTauri()) {
       // 브라우저 개발 모드: 임시 데모 경로
       const demoPath = "/tmp/claude-studio-demo";
-      addRecent(demoPath);
+      addRecent(demoPath, await projectBasename(demoPath));
       setCurrent(demoPath);
-      navigate(`/project/${encodeURIComponent(demoPath)}`);
+      navigate("/project");
       return;
     }
     const path = await pickFolder();
     if (!path) return;
-    addRecent(path);
+    addRecent(path, await projectBasename(path));
     setCurrent(path);
-    navigate(`/project/${encodeURIComponent(path)}`);
+    navigate("/project");
   };
 
-  const openRecent = (path: string) => {
-    addRecent(path);
+  const openRecent = async (path: string) => {
+    addRecent(path, await projectBasename(path));
     setCurrent(path);
-    navigate(`/project/${encodeURIComponent(path)}`);
+    navigate("/project");
   };
 
   return (
@@ -98,7 +99,7 @@ export function WelcomeRoute() {
                     <CardContent className="flex items-center justify-between gap-3 p-3">
                       <button
                         type="button"
-                        onClick={() => openRecent(p.path)}
+                        onClick={() => void openRecent(p.path)}
                         className="flex flex-1 items-center gap-3 text-left"
                       >
                         <FolderOpen className="size-4 text-muted-foreground" />

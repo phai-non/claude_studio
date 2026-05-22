@@ -1,11 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Link,
   Outlet,
   useLocation,
   useNavigate,
-  useParams,
 } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bot, FileText, ScrollText, Store, Terminal, Webhook } from "lucide-react";
@@ -17,24 +16,24 @@ import {
   readProjectSummary,
   type ClaudeProjectSummary,
 } from "@/lib/tauri";
+import { projectBasename } from "@/lib/path";
 
 export function WorkspaceRoute() {
   const { t } = useTranslation();
-  const { path: encoded } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const qc = useQueryClient();
-  const setCurrent = useProjectStore((s) => s.setCurrent);
-
-  const path = encoded ? decodeURIComponent(encoded) : null;
+  // 프로젝트 경로는 URL이 아니라 store에 둔다 — Windows 백슬래시 등 reserved
+  // char가 들어간 raw path를 URL segment로 박으면 react-router v7의 nested
+  // route + relative <Navigate> 가 재조립 단계에서 경로를 깨뜨린다.
+  // store는 zustand persist라 새로고침에도 살아남는다.
+  const path = useProjectStore((s) => s.current);
 
   useEffect(() => {
     if (!path) {
       navigate("/", { replace: true });
-      return;
     }
-    setCurrent(path);
-  }, [path, setCurrent, navigate]);
+  }, [path, navigate]);
 
   const summary = useQuery<ClaudeProjectSummary>({
     queryKey: ["project-summary", path],
@@ -67,7 +66,16 @@ export function WorkspaceRoute() {
     { to: "terminal", icon: Terminal, label: t("workspace.tabs.terminal") },
   ];
 
-  const projectName = path.split("/").filter(Boolean).pop() ?? path;
+  const [projectName, setProjectName] = useState<string>(path);
+  useEffect(() => {
+    let cancelled = false;
+    void projectBasename(path).then((name) => {
+      if (!cancelled) setProjectName(name);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [path]);
 
   return (
     <div className="grid h-full grid-cols-[260px_1fr]">

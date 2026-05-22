@@ -11,7 +11,7 @@ interface ProjectStore {
   recents: RecentProject[];
   current: string | null;
   setCurrent: (path: string | null) => void;
-  addRecent: (path: string) => void;
+  addRecent: (path: string, name: string) => void;
   removeRecent: (path: string) => void;
 }
 
@@ -21,11 +21,10 @@ export const useProjectStore = create<ProjectStore>()(
       recents: [],
       current: null,
       setCurrent: (path) => set({ current: path }),
-      addRecent: (path) => {
-        const name = path.split("/").filter(Boolean).pop() ?? path;
+      addRecent: (path, name) => {
         const next: RecentProject = {
           path,
-          name,
+          name: name || path,
           lastOpenedAt: Date.now(),
         };
         const filtered = get().recents.filter((p) => p.path !== path);

@@ -19,7 +19,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<WelcomeRoute />} />
       <Route path="/settings" element={<SettingsRoute />} />
-      <Route path="/project/:path" element={<WorkspaceRoute />}>
+      <Route path="/project" element={<WorkspaceRoute />}>
         <Route index element={<Navigate to="agents" replace />} />
         <Route path="agents" element={<AgentsTab />} />
         <Route path="commands" element={<CommandsTab />} />
