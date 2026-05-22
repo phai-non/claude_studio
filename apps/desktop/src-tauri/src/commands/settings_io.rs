@@ -21,9 +21,11 @@ fn resolve_path(scope: &str, project_path: Option<&str>) -> AppResult<PathBuf> {
             Ok(PathBuf::from(p).join(SETTINGS_REL))
         }
         "user" => {
-            let home = std::env::var_os("HOME")
-                .ok_or_else(|| AppError::Other("HOME 환경변수가 없습니다".into()))?;
-            Ok(PathBuf::from(home).join(SETTINGS_REL))
+            // Windows 에는 HOME 이 없고 USERPROFILE 이 표준. dirs crate 가
+            // OS API (Win32 KnownFolderID / unix $HOME) 로 안전하게 처리.
+            let home = dirs::home_dir()
+                .ok_or_else(|| AppError::Other("사용자 홈 디렉터리를 찾을 수 없습니다".into()))?;
+            Ok(home.join(SETTINGS_REL))
         }
         other => Err(AppError::Other(format!("알 수 없는 scope: {other}"))),
     }
