@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::io::{Read, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use once_cell::sync::Lazy;
@@ -10,6 +10,25 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 
 use crate::error::{AppError, AppResult};
+
+/// `program` 을 OS 의 PATH 검색 규칙에 맞춰 절대 경로로 resolve.
+///
+/// - 절대 경로면 그대로 반환.
+/// - 그 외엔 `which` crate 가 PATH 와 (Windows 의 경우) PATHEXT 까지 고려해서
+///   실제 실행 가능 파일을 찾는다. 이게 없으면 portable-pty 가 raw 한
+///   `CreateProcessW` / `execvp` 를 호출하면서 Windows 의 `.cmd`/`.bat` 같은
+///   PATHEXT 의존 실행 파일을 못 찾는다.
+fn resolve_program(program: &str) -> AppResult<PathBuf> {
+    let p = Path::new(program);
+    if p.is_absolute() {
+        return Ok(p.to_path_buf());
+    }
+    which::which(program).map_err(|e| {
+        AppError::Other(format!(
+            "program not found in PATH: {program} ({e})"
+        ))
+    })
+}
 
 struct Session {
     master: Arc<Mutex<Box<dyn MasterPty + Send>>>,
@@ -52,7 +71,8 @@ pub async fn pty_open(
         })
         .map_err(|e| AppError::Other(format!("openpty: {e}")))?;
 
-    let mut cmd = CommandBuilder::new(program);
+    let resolved = resolve_program(&program)?;
+    let mut cmd = CommandBuilder::new(resolved);
     for a in args {
         cmd.arg(a);
     }
@@ -65,6 +85,26 @@ pub async fn pty_open(
         cmd.env("HOME", home);
     }
     cmd.env("TERM", "xterm-256color");
+    #[cfg(windows)]
+    {
+        // Windows native console 앱 (claude.cmd 가 띄우는 node 등) 이 PATHEXT/USERPROFILE
+        // 등을 못 받으면 npm 글로벌 패키지를 다시 못 찾는다.
+        for key in [
+            "PATHEXT",
+            "USERPROFILE",
+            "APPDATA",
+            "LOCALAPPDATA",
+            "ProgramFiles",
+            "ProgramFiles(x86)",
+            "SystemRoot",
+            "ComSpec",
+            "NVM_SYMLINK",
+        ] {
+            if let Ok(value) = std::env::var(key) {
+                cmd.env(key, value);
+            }
+        }
+    }
 
     let child = pair
         .slave
