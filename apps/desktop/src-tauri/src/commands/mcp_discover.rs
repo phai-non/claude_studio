@@ -78,7 +78,7 @@ fn collect_into(map: Option<&Value>, origin: &str, out: &mut Vec<StoredConfig>) 
 fn collect_all_configs(project_path: Option<&str>) -> Vec<StoredConfig> {
     let mut out: Vec<StoredConfig> = Vec::new();
 
-    if let Some(home) = std::env::var_os("HOME").map(std::path::PathBuf::from) {
+    if let Some(home) = dirs::home_dir() {
         // ~/.claude/mcp.json (legacy)
         let p = home.join(".claude/mcp.json");
         if let Some(j) = read_json(&p) {

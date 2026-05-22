@@ -156,9 +156,10 @@ pub fn read_tool_hints(project_path: Option<String>) -> AppResult<ToolHints> {
     Ok(ToolHints { hints, warnings })
 }
 
-/// 외부 라이브러리 의존을 피하기 위한 가벼운 HOME 조회
+/// OS-native 사용자 홈 조회. Windows 는 USERPROFILE, unix 는 $HOME 을
+/// `dirs` crate 가 알아서 처리한다.
 fn dirs_home() -> Option<std::path::PathBuf> {
-    std::env::var_os("HOME").map(std::path::PathBuf::from)
+    dirs::home_dir()
 }
 
 const BUILTIN_TOOLS: &[&str] = &[
