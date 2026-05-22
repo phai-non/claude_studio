@@ -45,8 +45,9 @@ interface SettingsStore {
   setMarketplaceIndexUrl: (url: string) => void;
 }
 
-const DEFAULT_INDEX_URL =
-  "https://raw.githubusercontent.com/claude-studio/marketplace-index/main/manifest.json";
+// 외부 마켓플레이스 인덱스는 옵션 (builtin 템플릿이 항상 보임). 사용자가
+// Settings 에서 URL 을 직접 등록하기 전엔 외부 fetch 안 한다.
+const DEFAULT_INDEX_URL = "";
 
 export const useSettingsStore = create<SettingsStore>()(
   persist(
