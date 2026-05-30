@@ -111,7 +111,12 @@
     "theme": "테마",
     "themeLight": "라이트",
     "themeDark": "다크",
-    "themeSystem": "시스템"
+    "themeSystem": "시스템",
+    "autoUpdate": "자동 업데이트",
+    "autoUpdateEnabled": "자동 업데이트 사용",
+    "autoUpdateDisabled": "자동 업데이트 해제",
+    "autoUpdateInterval": "업데이트 확인 주기(시간)",
+    "autoUpdateIntervalHint": "최소 1시간부터 720시간까지 입력할 수 있습니다."
   },
   "common": {
     "save": "저장",
@@ -139,6 +144,8 @@
   "appUpdate": {
     "current": "현재 버전 v{{version}}",
     "checking": "업데이트 확인 중…",
+    "autoChecking": "자동 업데이트 확인 중…",
+    "autoApplying": "v{{version}} 업데이트를 설치합니다.",
     "upToDate": "최신 버전입니다",
     "available": "새 버전 {{tag}} 있음",
     "installNow": "지금 업데이트",
