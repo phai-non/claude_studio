@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussions (자유 토론·아이디어)
+    url: https://github.com/UkiDelly/claude_studio/discussions
+    about: 질문·아이디어 교환은 Discussions를 권장합니다. / Use Discussions for open questions and ideas.
+  - name: 📦 Releases (최신 버전 확인)
+    url: https://github.com/UkiDelly/claude_studio/releases
+    about: 버그 신고 전 최신 버전인지 먼저 확인해주세요. / Check the latest release before reporting bugs.
+  - name: 📖 릴리즈 / 자동 업데이트 가이드
+    url: https://github.com/UkiDelly/claude_studio/blob/main/docs/release.md
+    about: 키 관리·CI·자동 업데이트 셋업 문서. / Release, signing key, and auto-update setup guide.

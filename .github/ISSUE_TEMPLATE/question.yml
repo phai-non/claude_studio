@@ -1,0 +1,41 @@
+name: ❓ Question / 질문
+description: 사용법·동작 방식 등에 대한 질문. / Questions about usage or behavior.
+title: "[Question] "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 빠른 답변을 원하시면 / For a faster reply
+
+        **GitHub Discussions** 사용을 권장합니다. 일반 질문은 보통 Discussions가 더 빨리 답변됩니다.
+        Prefer **GitHub Discussions** for general questions — they tend to get answered faster.
+
+        구체적인 동작 / 재현 가능한 의문 / 코드 동작에 대한 질문이라면 이 이슈 폼이 적합합니다.
+        Use this form when the question is concrete, reproducible, or tied to code behavior.
+
+  - type: checkboxes
+    id: prechecks
+    attributes:
+      label: 사전 확인 / Pre-flight checks
+      options:
+        - label: README와 docs/release.md를 확인했습니다. / I checked README and docs/release.md.
+          required: true
+        - label: Discussions를 검색했습니다. / I searched Discussions.
+          required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: 질문 내용 / Question
+      placeholder: "예: MCP HTTP 서버 introspection이 SSE legacy 서버에서도 동작하나요?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: 이미 시도한 것 / What you've tried
+      description: 검색, 설정 변경, 코드 변경 등. / Searches, config changes, code experiments.
+    validations:
+      required: false

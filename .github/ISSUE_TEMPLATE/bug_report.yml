@@ -1,0 +1,108 @@
+name: 🐛 Bug Report / 버그 신고
+description: 재현 가능한 버그를 신고합니다. / Report a reproducible bug.
+title: "[Bug] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 신고해주셔서 감사합니다 / Thanks for the report
+
+        영어·한국어 둘 다 환영합니다. 양식은 가능한 만큼 채워주세요 — 재현 정보가 풍부할수록 빠르게 고칠 수 있습니다.
+        Either Korean or English is welcome. Fill in as much as you can — the more reproduction info, the faster we can fix it.
+
+  - type: checkboxes
+    id: prechecks
+    attributes:
+      label: 사전 확인 / Pre-flight checks
+      description: 다음을 먼저 확인해주세요. / Please confirm the following.
+      options:
+        - label: 기존 이슈를 검색해 중복이 없는지 확인했습니다. / I searched existing issues for duplicates.
+          required: true
+        - label: 최신 release를 사용 중입니다. / I am on the latest release.
+          required: true
+        - label: Releases 페이지의 known issues / changelog를 확인했습니다. / I checked the Releases page for known issues.
+          required: false
+
+  - type: input
+    id: app-version
+    attributes:
+      label: 앱 버전 / App version
+      description: Welcome 화면 또는 About에서 확인 가능합니다. / Visible on the Welcome screen or About panel.
+      placeholder: "v1.0.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      options:
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Windows
+        - Linux
+    validations:
+      required: true
+
+  - type: input
+    id: os-version
+    attributes:
+      label: OS 세부 버전 / OS version detail
+      placeholder: "예: macOS 15.2 / Windows 11 23H2 / Ubuntu 24.04"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 관련 기능 영역 / Affected area
+      options:
+        - Agents 편집기
+        - Slash Commands
+        - CLAUDE.md
+        - Marketplace
+        - Terminal (내장 PTY)
+        - MCP discovery
+        - Hooks
+        - 자동 업데이트 / Auto-update
+        - Claude CLI 체크
+        - 기타 / Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 무엇이 일어났는가 / What happened?
+      description: 관측한 동작을 가능한 한 구체적으로 / Describe the observed behavior as specifically as possible.
+      placeholder: "예: agent 저장 버튼을 누르면 토스트가 뜨지만 파일이 실제로 생성되지 않습니다."
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: 재현 단계 / Steps to reproduce
+      placeholder: |
+        1. 새 프로젝트 열기
+        2. Agents 탭에서 "새로 만들기"
+        3. 이름 입력 후 저장
+        4. 사이드바에 항목이 보이지 않음
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대한 동작 / Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 로그 / 스크린샷 / Logs · Screenshots
+      description: 콘솔/터미널 로그, 스크린샷이 있다면 첨부해주세요. / Attach any console/terminal output or screenshots.
+    validations:
+      required: false
