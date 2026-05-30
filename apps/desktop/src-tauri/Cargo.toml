@@ -1,6 +1,6 @@
 [package]
 name = "desktop"
-version = "1.0.2"
+version = "1.1.0"
 description = "Claude Studio - GUI for .claude project configuration"
 authors = ["Claude Studio contributors"]
 edition = "2021"
