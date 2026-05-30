@@ -1,8 +1,4 @@
-import { useOutletContext } from "react-router-dom";
-import { TerminalView } from "@/features/terminal/Terminal";
-import type { WorkspaceContext } from "../Workspace";
-
 export function TerminalTab() {
-  const { projectPath } = useOutletContext<WorkspaceContext>();
-  return <TerminalView projectPath={projectPath} />;
+  // 터미널은 탭 전환 중에도 세션을 유지해야 해서 WorkspaceRoute가 직접 렌더링한다.
+  return null;
 }
