@@ -8,8 +8,16 @@ import { useSettingsStore } from "@/store/project";
 
 export function SettingsRoute() {
   const { t, i18n } = useTranslation();
-  const { theme, setTheme, marketplaceIndexUrl, setMarketplaceIndexUrl } =
-    useSettingsStore();
+  const {
+    theme,
+    setTheme,
+    marketplaceIndexUrl,
+    setMarketplaceIndexUrl,
+    autoUpdateEnabled,
+    setAutoUpdateEnabled,
+    autoUpdateIntervalHours,
+    setAutoUpdateIntervalHours,
+  } = useSettingsStore();
 
   return (
     <div className="mx-auto w-full max-w-xl px-6 py-10">
@@ -51,6 +59,54 @@ export function SettingsRoute() {
               {t(`settings.theme${mode[0].toUpperCase()}${mode.slice(1)}`)}
             </Button>
           ))}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle className="text-sm">{t("settings.autoUpdate")}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant={autoUpdateEnabled ? "default" : "outline"}
+              size="sm"
+              onClick={() => setAutoUpdateEnabled(true)}
+            >
+              {t("settings.autoUpdateEnabled")}
+            </Button>
+            <Button
+              type="button"
+              variant={!autoUpdateEnabled ? "default" : "outline"}
+              size="sm"
+              onClick={() => setAutoUpdateEnabled(false)}
+            >
+              {t("settings.autoUpdateDisabled")}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {t("settings.autoUpdateIntervalHint")}
+          </p>
+          <div className="space-y-1">
+            <Label htmlFor="auto-update-interval" className="text-xs text-muted-foreground">
+              {t("settings.autoUpdateInterval")}
+            </Label>
+            <Input
+              id="auto-update-interval"
+              type="number"
+              min={1}
+              max={720}
+              value={autoUpdateIntervalHours}
+              onChange={(e) => {
+                const next = Number.parseInt(e.currentTarget.value, 10);
+                if (!Number.isNaN(next)) {
+                  setAutoUpdateIntervalHours(next);
+                }
+              }}
+              className="w-36"
+            />
+          </div>
         </CardContent>
       </Card>
 

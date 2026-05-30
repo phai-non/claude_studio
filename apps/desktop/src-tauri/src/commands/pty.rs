@@ -198,6 +198,111 @@ pub fn pty_resize(session_id: String, cols: u16, rows: u16) -> AppResult<()> {
 
 #[tauri::command]
 pub fn pty_close(session_id: String) -> AppResult<()> {
-    SESSIONS.lock().remove(&session_id);
+    if let Some(mut session) = SESSIONS.lock().remove(&session_id) {
+        session
+            ._child
+            .kill()
+            .map_err(|e| AppError::Other(format!("kill: {e}")))?;
+    }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io::{Cursor, Read, Result as IoResult, Write};
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    use anyhow::Error;
+    use portable_pty::{ChildKiller, ExitStatus};
+
+    use super::*;
+
+    #[derive(Debug)]
+    struct MockMasterPty;
+
+    impl MasterPty for MockMasterPty {
+        fn resize(&self, _size: PtySize) -> Result<(), Error> {
+            Ok(())
+        }
+
+        fn get_size(&self) -> Result<PtySize, Error> {
+            Ok(PtySize::default())
+        }
+
+        fn try_clone_reader(&self) -> Result<Box<dyn Read + Send>, Error> {
+            Ok(Box::new(Cursor::new(Vec::<u8>::new())))
+        }
+
+        fn take_writer(&self) -> Result<Box<dyn Write + Send>, Error> {
+            Ok(Box::new(std::io::sink()))
+        }
+
+        #[cfg(unix)]
+        fn process_group_leader(&self) -> Option<libc::pid_t> {
+            None
+        }
+
+        #[cfg(unix)]
+        fn as_raw_fd(&self) -> Option<portable_pty::unix::RawFd> {
+            None
+        }
+
+        #[cfg(unix)]
+        fn tty_name(&self) -> Option<PathBuf> {
+            None
+        }
+    }
+
+    #[derive(Debug)]
+    struct MockChild {
+        killed: Arc<AtomicBool>,
+    }
+
+    impl ChildKiller for MockChild {
+        fn kill(&mut self) -> IoResult<()> {
+            self.killed.store(true, Ordering::SeqCst);
+            Ok(())
+        }
+
+        fn clone_killer(&self) -> Box<dyn ChildKiller + Send + Sync> {
+            Box::new(Self {
+                killed: self.killed.clone(),
+            })
+        }
+    }
+
+    impl Child for MockChild {
+        fn try_wait(&mut self) -> IoResult<Option<ExitStatus>> {
+            Ok(Some(ExitStatus::with_exit_code(0)))
+        }
+
+        fn wait(&mut self) -> IoResult<ExitStatus> {
+            Ok(ExitStatus::with_exit_code(0))
+        }
+
+        fn process_id(&self) -> Option<u32> {
+            None
+        }
+    }
+
+    #[test]
+    fn pty_close_kills_child_before_dropping_session() {
+        let session_id = "test-session".to_string();
+        let killed = Arc::new(AtomicBool::new(false));
+        SESSIONS.lock().insert(
+            session_id.clone(),
+            Session {
+                master: Arc::new(Mutex::new(Box::new(MockMasterPty))),
+                writer: Arc::new(Mutex::new(Box::new(std::io::sink()))),
+                _child: Box::new(MockChild {
+                    killed: killed.clone(),
+                }),
+            },
+        );
+
+        pty_close(session_id.clone()).expect("pty_close succeeds");
+
+        assert!(killed.load(Ordering::SeqCst));
+        assert!(!SESSIONS.lock().contains_key(&session_id));
+    }
 }

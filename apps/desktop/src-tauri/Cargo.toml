@@ -1,6 +1,6 @@
 [package]
 name = "desktop"
-version = "1.0.2"
+version = "1.1.0"
 description = "Claude Studio - GUI for .claude project configuration"
 authors = ["Claude Studio contributors"]
 edition = "2021"
@@ -37,3 +37,7 @@ uuid = { version = "1", features = ["v4"] }
 tokio = { version = "1", features = ["process", "io-util", "time", "macros", "rt"] }
 dirs = "5"
 which = "6"
+
+[dev-dependencies]
+anyhow = "1"
+libc = "0.2"

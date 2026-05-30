@@ -9,6 +9,7 @@ import { ClaudeMdTab } from "@/routes/tabs/ClaudeMdTab";
 import { HooksTab } from "@/routes/tabs/HooksTab";
 import { MarketplaceTab } from "@/routes/tabs/MarketplaceTab";
 import { TerminalTab } from "@/routes/tabs/TerminalTab";
+import { AutoUpdateManager } from "@/features/app-update/AutoUpdateManager";
 import { applyTheme, useSettingsStore } from "@/store/project";
 
 export default function App() {
@@ -16,19 +17,22 @@ export default function App() {
   useEffect(() => applyTheme(theme), [theme]);
 
   return (
-    <Routes>
-      <Route path="/" element={<WelcomeRoute />} />
-      <Route path="/settings" element={<SettingsRoute />} />
-      <Route path="/project" element={<WorkspaceRoute />}>
-        <Route index element={<Navigate to="agents" replace />} />
-        <Route path="agents" element={<AgentsTab />} />
-        <Route path="commands" element={<CommandsTab />} />
-        <Route path="claude-md" element={<ClaudeMdTab />} />
-        <Route path="hooks" element={<HooksTab />} />
-        <Route path="marketplace" element={<MarketplaceTab />} />
-        <Route path="terminal" element={<TerminalTab />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <AutoUpdateManager />
+      <Routes>
+        <Route path="/" element={<WelcomeRoute />} />
+        <Route path="/settings" element={<SettingsRoute />} />
+        <Route path="/project" element={<WorkspaceRoute />}>
+          <Route index element={<Navigate to="agents" replace />} />
+          <Route path="agents" element={<AgentsTab />} />
+          <Route path="commands" element={<CommandsTab />} />
+          <Route path="claude-md" element={<ClaudeMdTab />} />
+          <Route path="hooks" element={<HooksTab />} />
+          <Route path="marketplace" element={<MarketplaceTab />} />
+          <Route path="terminal" element={<TerminalTab />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 }

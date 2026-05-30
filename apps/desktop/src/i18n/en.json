@@ -111,7 +111,12 @@
     "theme": "Theme",
     "themeLight": "Light",
     "themeDark": "Dark",
-    "themeSystem": "System"
+    "themeSystem": "System",
+    "autoUpdate": "Auto update",
+    "autoUpdateEnabled": "Enable auto update",
+    "autoUpdateDisabled": "Disable auto update",
+    "autoUpdateInterval": "Check interval (hours)",
+    "autoUpdateIntervalHint": "Allowed range: 1 to 720 hours."
   },
   "common": {
     "save": "Save",
@@ -139,6 +144,8 @@
   "appUpdate": {
     "current": "Current v{{version}}",
     "checking": "Checking for updates…",
+    "autoChecking": "Checking for auto update…",
+    "autoApplying": "Applying update {{version}}…",
     "upToDate": "You're on the latest version",
     "available": "{{tag}} is available",
     "installNow": "Install now",

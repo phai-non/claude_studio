@@ -185,6 +185,37 @@ export async function settingsFilePath(
   });
 }
 
+export interface PtyOpenOptions {
+  cwd: string;
+  program: string;
+  args: string[];
+  cols: number;
+  rows: number;
+}
+
+export async function ptyOpen(options: PtyOpenOptions): Promise<string> {
+  return await invoke<string>("pty_open", { ...options });
+}
+
+export async function ptyWrite(
+  sessionId: string,
+  data: string,
+): Promise<void> {
+  await invoke<void>("pty_write", { sessionId, data });
+}
+
+export async function ptyResize(
+  sessionId: string,
+  cols: number,
+  rows: number,
+): Promise<void> {
+  await invoke<void>("pty_resize", { sessionId, cols, rows });
+}
+
+export async function ptyClose(sessionId: string): Promise<void> {
+  await invoke<void>("pty_close", { sessionId });
+}
+
 export function compareDottedVersion(current: string, latest: string): number {
   const norm = (v: string) =>
     v

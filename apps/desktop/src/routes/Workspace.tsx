@@ -9,6 +9,7 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bot, FileText, ScrollText, Store, Terminal, Webhook } from "lucide-react";
 import { useProjectStore } from "@/store/project";
+import { TerminalView } from "@/features/terminal/Terminal";
 import { cn } from "@/lib/utils";
 import {
   ensureClaudeDir,
@@ -44,6 +45,32 @@ export function WorkspaceRoute() {
       return await readProjectSummary(path);
     },
   });
+
+  const isTerminalRoute = location.pathname.endsWith("/terminal");
+  const [terminalMountState, setTerminalMountState] = useState<{
+    projectPath: string;
+    mounted: boolean;
+  } | null>(
+    path
+      ? {
+          projectPath: path,
+          mounted: isTerminalRoute,
+        }
+      : null,
+  );
+
+  useEffect(() => {
+    if (!path) return;
+    setTerminalMountState((current) => {
+      if (current?.projectPath !== path) {
+        return { projectPath: path, mounted: isTerminalRoute };
+      }
+      if (isTerminalRoute && !current.mounted) {
+        return { ...current, mounted: true };
+      }
+      return current;
+    });
+  }, [isTerminalRoute, path]);
 
   if (!path) return null;
 
@@ -138,14 +165,36 @@ export function WorkspaceRoute() {
           </div>
         )}
       </aside>
-      <main className="overflow-auto bg-background">
-        <Outlet
-          context={{
-            projectPath: path,
-            summary: summary.data,
-            refreshSummary: () => summary.refetch(),
-          }}
-        />
+      <main className="relative min-h-0 overflow-hidden bg-background">
+        <div
+          className={cn(
+            "h-full min-h-0 overflow-auto",
+            isTerminalRoute && "hidden",
+          )}
+        >
+          <Outlet
+            context={{
+              projectPath: path,
+              summary: summary.data,
+              refreshSummary: () => summary.refetch(),
+            }}
+          />
+        </div>
+        {terminalMountState?.projectPath === path &&
+          terminalMountState.mounted && (
+            <div
+              className={cn(
+                "absolute inset-0 h-full min-h-0",
+                !isTerminalRoute && "hidden",
+              )}
+            >
+              <TerminalView
+                key={path}
+                projectPath={path}
+                active={isTerminalRoute}
+              />
+            </div>
+          )}
       </main>
     </div>
   );

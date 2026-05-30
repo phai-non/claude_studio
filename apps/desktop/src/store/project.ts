@@ -40,21 +40,33 @@ export const useProjectStore = create<ProjectStore>()(
 interface SettingsStore {
   theme: "light" | "dark" | "system";
   marketplaceIndexUrl: string;
+  autoUpdateEnabled: boolean;
+  autoUpdateIntervalHours: number;
   setTheme: (theme: SettingsStore["theme"]) => void;
   setMarketplaceIndexUrl: (url: string) => void;
+  setAutoUpdateEnabled: (enabled: boolean) => void;
+  setAutoUpdateIntervalHours: (hours: number) => void;
 }
 
 // 외부 마켓플레이스 인덱스는 옵션 (builtin 템플릿이 항상 보임). 사용자가
 // Settings 에서 URL 을 직접 등록하기 전엔 외부 fetch 안 한다.
 const DEFAULT_INDEX_URL = "";
+const DEFAULT_AUTO_UPDATE_INTERVAL_HOURS = 24;
 
 export const useSettingsStore = create<SettingsStore>()(
   persist(
     (set) => ({
       theme: "system",
       marketplaceIndexUrl: DEFAULT_INDEX_URL,
+      autoUpdateEnabled: true,
+      autoUpdateIntervalHours: DEFAULT_AUTO_UPDATE_INTERVAL_HOURS,
       setTheme: (theme) => set({ theme }),
       setMarketplaceIndexUrl: (url) => set({ marketplaceIndexUrl: url }),
+      setAutoUpdateEnabled: (enabled) => set({ autoUpdateEnabled: enabled }),
+      setAutoUpdateIntervalHours: (hours) => {
+        const normalized = Math.max(1, Math.min(720, Math.floor(hours)));
+        set({ autoUpdateIntervalHours: normalized });
+      },
     }),
     { name: "cs.settings" },
   ),
